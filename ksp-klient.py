@@ -44,24 +44,31 @@ headers = {"Authorization": f"Bearer {token}"}
 
 
 def getStatus(task):
-    return requests.get(base_url + f'tasks/status?task={task}', headers=headers)
+    return requests.get(base_url + "tasks/status", headers=headers,
+        params = {"task" : task})
     
 
 def getTest(task, subtask, generate=True):
-    return requests.get(base_url + f"tasks/input?task={task}" + \
-        f"&subtask={subtask}&generate=" + ("true" if generate else "false"), headers=headers)
+    return requests.get(base_url + "tasks/input", 
+    params = {
+        "task" : task, 
+        "subtask" : subtask, 
+        "generate" : ("true" if generate else "false")
+    }, headers=headers)
         
 
 def submit(task, subtask, content):
     newHeaders = headers
     newHeaders['Content-Type'] = 'text/plain'
-    return requests.post(base_url + f"tasks/submit?task={task}&subtask={subtask}",
-	data = content, headers=newHeaders)
+    return requests.post(base_url + "tasks/submit",
+	    data = content, headers=newHeaders, 
+        params = { "task" : task, "subtask" : subtask})
 
 
 def generate(task, subtask):
-    return requests.post(base_url + f"tasks/generate?task={task}&subtask={subtask}", \
-        headers=headers)
+    return requests.post(base_url + "tasks/generate",
+        headers=headers,
+        params = { "task" : task, "subtask" : subtask})
 
 
 if len(sys.argv) == 1 or sys.argv[1] not in ["list", "status", "submit", "downloadnew", "run"]:
