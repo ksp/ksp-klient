@@ -49,7 +49,7 @@ def getStatus(task):
     
 
 def getTest(task, subtask, generate=True):
-    return requests.get(base_url + "tasks/input", 
+    return requests.post(base_url + "tasks/input", 
     params = {
         "task" : task, 
         "subtask" : subtask, 
