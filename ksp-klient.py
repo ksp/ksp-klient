@@ -20,10 +20,13 @@ def fileExists(name: str) -> None:
 
 def requestWrapper(fce):
     def wrapper(url, *args, **kvargs):
-        #print(url)
         ret = fce(url, *args, **kvargs)
+        print(ret.url)
         if ret.status_code != 200:
-                print(ret.json())
+                try:
+                    print(ret.json())
+                except ValueError:
+                    print(ret.text)
                 sys.exit(1)
         return ret
 
