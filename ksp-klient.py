@@ -1,16 +1,18 @@
 import sys
 import os
 import subprocess
+from typing import Union, AnyStr
 
 
 try:
     import requests
+    from requests import Response
 except ModuleNotFoundError as e:
     print("Nemáš nainstalovaný modul requests - pip install requests")
     sys.exit(1)
 
 
-def fileExists(name):
+def fileExists(name: str) -> None:
     if not os.path.exists(name):
         print(f"Soubor {name} neexistuje")
         sys.exit(1)
@@ -43,12 +45,12 @@ with open(token_path, "r") as f:
 headers = {"Authorization": f"Bearer {token}"}
 
 
-def getStatus(task):
+def getStatus(task: str) -> Response:
     return requests.get(base_url + "tasks/status", headers=headers,
         params = {"task" : task})
     
 
-def getTest(task, subtask, generate=True):
+def getTest(task: str, subtask: Union[int, str], generate: bool = True) -> Response:
     return requests.post(base_url + "tasks/input", 
     params = {
         "task" : task, 
@@ -57,7 +59,7 @@ def getTest(task, subtask, generate=True):
     }, headers=headers)
         
 
-def submit(task, subtask, content):
+def submit(task: str, subtask: Union[int, str], content: AnyStr) -> Response:
     newHeaders = headers
     newHeaders['Content-Type'] = 'text/plain'
     return requests.post(base_url + "tasks/submit",
@@ -65,7 +67,7 @@ def submit(task, subtask, content):
         params = { "task" : task, "subtask" : subtask})
 
 
-def generate(task, subtask):
+def generate(task: str, subtask: Union[int, str]) -> Response:
     return requests.post(base_url + "tasks/generate",
         headers=headers,
         params = { "task" : task, "subtask" : subtask})
