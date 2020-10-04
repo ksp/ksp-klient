@@ -19,8 +19,8 @@ def fileExists(name: str) -> None:
 
 
 def requestWrapper(fce):
-    def wrapper(url, *args, **kvargs):
-        ret = fce(url, *args, **kvargs)
+    def wrapper(*args, **kvargs):
+        ret = fce(*args, **kvargs)
         print(ret.url)
         if ret.status_code != 200:
                 try:
