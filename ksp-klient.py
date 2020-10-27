@@ -1,7 +1,8 @@
 import sys
 import os
 import subprocess
-from typing import Union, AnyStr
+import json
+from typing import Union, AnyStr, Optional
 
 
 try:
@@ -36,47 +37,62 @@ def requestWrapper(fce):
 requests.get = requestWrapper(requests.get)
 requests.post = requestWrapper(requests.post)
 
-base_url = "https://ksp.mff.cuni.cz/api/"
+class ApiService:
+    base_url: str = "https://ksp.mff.cuni.cz/api/"
+    token_path: str = os.path.join(os.path.expanduser("~"), ".config", ".token")
 
-token = ""
-token_path = os.path.join(os.path.expanduser("~"), ".config", ".token")
-
-fileExists(token_path)
-with open(token_path, "r") as f:
-	token = f.readline().strip()
-
-headers = {"Authorization": f"Bearer {token}"}
-
-
-def getStatus(task: str) -> Response:
-    return requests.get(base_url + "tasks/status", headers=headers,
-        params = {"task" : task})
-    
-
-def getTest(task: str, subtask: Union[int, str], generate: bool = True) -> Response:
-    return requests.post(base_url + "tasks/input", 
-    params = {
-        "task" : task, 
-        "subtask" : subtask, 
-        "generate" : ("true" if generate else "false")
-    }, headers=headers)
+    def __init__(
+        self, base_url: Optional[str] = None, 
+        token_path: Optional[str] = None
+    ) -> None:
+        if base_url is not None:
+            self.base_url = base_url
+        if token_path is not None:
+            self.token_path = token_path
         
+        fileExists(self.token_path)
+        token: str = ""
+        with open(self.token_path, "r") as f:
+            token = f.readline().strip()
+        
+        self.headers: dict = {"Authorization": f"Bearer {token}"}
+        
+    def getList(self) -> Response:
+        return requests.get(self.base_url + 'tasks/list', headers=self.headers)
 
-def submit(task: str, subtask: Union[int, str], content: AnyStr) -> Response:
-    newHeaders = headers
-    newHeaders['Content-Type'] = 'text/plain'
-    return requests.post(base_url + "tasks/submit",
-	    data = content, headers=newHeaders, 
-        params = { "task" : task, "subtask" : subtask})
+    def getStatus(self, task: str) -> Response:
+        return requests.get(self.base_url + "tasks/status", headers=self.headers,
+            params = {"task" : task})
+    
+    def getTest(
+        self, task: str, subtask: Union[int, str],
+        generate: bool = True
+    ) -> Response:
+        return requests.post(self.base_url + "tasks/input", 
+            params = {
+                "task" : task, 
+                "subtask" : subtask, 
+                "generate" : ("true" if generate else "false")
+            }, headers=self.headers)
+
+    def submit(self, task: str, subtask: Union[int, str], content: AnyStr) -> Response:
+        newHeaders = self.headers
+        newHeaders['Content-Type'] = 'text/plain'
+        return requests.post(self.base_url + "tasks/submit",
+            data = content, headers=newHeaders, 
+            params = { "task" : task, "subtask" : subtask})
+
+    def generate(self, task: str, subtask: Union[int, str]) -> Response:
+        return requests.post(self.base_url + "tasks/generate",
+            headers=self.headers,
+            params = { "task" : task, "subtask" : subtask})
 
 
-def generate(task: str, subtask: Union[int, str]) -> Response:
-    return requests.post(base_url + "tasks/generate",
-        headers=headers,
-        params = { "task" : task, "subtask" : subtask})
+def printNiceJson(json_text):
+    print(json.dumps(json_text, indent=4, ensure_ascii=False))
 
 
-if len(sys.argv) == 1 or sys.argv[1] not in ["list", "status", "submit", "downloadnew", "run"]:
+def handleHelp():
     print("""vypsat všechny úlohy možné k odevzdání - list
 vypsat stav úlohy - status <úloha>
 odeslat odpověď - submit <úloha> <číslo testu> <cesta k souboru>
@@ -84,49 +100,54 @@ vygenerovat a stáhnout testovací vstup - downloadnew <úloha> <číslo testu>
 spustit tvoje řešení na všech testovacích vstupech - run <úloha> <argumenty jak spustit zdoják>
 """)
     sys.exit(0)
-    
-elif sys.argv[1] == "list":
-    r = requests.get(base_url + 'tasks/list', headers=headers)
-    print(r.json())
-    
-elif sys.argv[1] == "status":
+
+
+def handleList():
+    r = apiService.getList()
+    printNiceJson(r.json())
+
+
+def handleStatus():
     if len(sys.argv) == 2:
         print("""Nedostatečný počet argumentů
 status <úloha>
 např: python3 ksp-klient.py status 32-Z4-1""")
         sys.exit(0)
         
-    r = getStatus(sys.argv[2])
-    print(r.json())
+    r = apiService.getStatus(sys.argv[2])
+    printNiceJson(r.json())
 
-elif sys.argv[1] == "submit":
+
+def handleSubmit():
     if len(sys.argv) < 5:
         print("""Nedostatečný počet argumentů
 submit <úloha> <číslo testu> <cesta k souboru>
 např: python3 ksp-klient.py submit 32-Z4-1 1 01.out""")
         sys.exit(0)
-        
-    headers['Content-Type'] = 'text/plain'
+    
     user_output = ""
     file_name = sys.argv[4]
 
     fileExists(file_name)
     with open(file_name, "r") as f:
         user_output = f.read()
-    r = submit(sys.argv[2], sys.argv[3], user_output)
+
+    r = apiService.submit(sys.argv[2], sys.argv[3], user_output)
     print(r.text)
 
-elif sys.argv[1] == "downloadnew":
+
+def handleDownloadNew():
     if len(sys.argv) < 4:
         print("""Nedostatečný počet argumentů
 downloadnew <úloha> <číslo testu>
 např: python3 ksp-klient.py downloadnew 32-Z4-1 1""")
         sys.exit(0)
         
-    r = getTest(sys.argv[2], sys.argv[3])
+    r = apiService.getTest(sys.argv[2], sys.argv[3])
     print(r.text)
-    
-elif sys.argv[1] == "run":
+
+
+def handleRun():
     if len(sys.argv) < 4:
         print("""Nedostatečný počet argumentů
 run <úloha> <argumenty jak spustit zdoják>
@@ -135,10 +156,31 @@ např. python3 ksp-klient.py run 32-Z4-1 python3 solver.py""")
 
     sol_args = sys.argv[3:]
     task = sys.argv[2]
-    numberSubtasks = len(getStatus(task).json()["subtasks"])
+    numberSubtasks = len(apiService.getStatus(task).json()["subtasks"])
     for subtask in range(1, numberSubtasks+1):
-        _input = getTest(task, subtask).text
+        _input = apiService.getTest(task, subtask).text
         output = subprocess.check_output(sol_args, input=_input.encode())
-        response = submit(task, subtask, output.decode())
+        response = apiService.submit(task, subtask, output.decode())
         print(f"Tvá odpověď na podúkol {subtask} je {response.json()['verdict']}")
+
+
+apiService = ApiService()
+
+if len(sys.argv) == 1 or sys.argv[1] not in ["list", "status", "submit", "downloadnew", "run"]:
+    handleHelp()
+    
+elif sys.argv[1] == "list":
+    handleList()
+    
+elif sys.argv[1] == "status":
+    handleStatus()
+
+elif sys.argv[1] == "submit":
+    handleSubmit()
+
+elif sys.argv[1] == "downloadnew":
+    handleDownloadNew()
+
+elif sys.argv[1] == "run":
+    handleRun()
         
