@@ -37,9 +37,9 @@ def requestWrapper(fce):
 requests.get = requestWrapper(requests.get)
 requests.post = requestWrapper(requests.post)
 
-class ApiService:
+class KSPkspApiService:
     base_url: str = "https://ksp.mff.cuni.cz/api/"
-    token_path: str = os.path.join(os.path.expanduser("~"), ".config", ".token")
+    token_path: str = os.path.join(os.path.expanduser("~"), ".config", "ksp-api-token")
 
     def __init__(
         self, base_url: Optional[str] = None, 
@@ -103,7 +103,7 @@ spustit tvoje řešení na všech testovacích vstupech - run <úloha> <argument
 
 
 def handleList():
-    r = apiService.getList()
+    r = kspApiService.getList()
     printNiceJson(r.json())
 
 
@@ -114,7 +114,7 @@ status <úloha>
 např: python3 ksp-klient.py status 32-Z4-1""")
         sys.exit(0)
         
-    r = apiService.getStatus(sys.argv[2])
+    r = kspApiService.getStatus(sys.argv[2])
     printNiceJson(r.json())
 
 
@@ -132,7 +132,7 @@ např: python3 ksp-klient.py submit 32-Z4-1 1 01.out""")
     with open(file_name, "r") as f:
         user_output = f.read()
 
-    r = apiService.submit(sys.argv[2], sys.argv[3], user_output)
+    r = kspApiService.submit(sys.argv[2], sys.argv[3], user_output)
     print(r.text)
 
 
@@ -143,7 +143,7 @@ downloadnew <úloha> <číslo testu>
 např: python3 ksp-klient.py downloadnew 32-Z4-1 1""")
         sys.exit(0)
         
-    r = apiService.getTest(sys.argv[2], sys.argv[3])
+    r = kspApiService.getTest(sys.argv[2], sys.argv[3])
     print(r.text)
 
 
@@ -156,15 +156,15 @@ např. python3 ksp-klient.py run 32-Z4-1 python3 solver.py""")
 
     sol_args = sys.argv[3:]
     task = sys.argv[2]
-    numberSubtasks = len(apiService.getStatus(task).json()["subtasks"])
+    numberSubtasks = len(kspApiService.getStatus(task).json()["subtasks"])
     for subtask in range(1, numberSubtasks+1):
-        _input = apiService.getTest(task, subtask).text
+        _input = kspApiService.getTest(task, subtask).text
         output = subprocess.check_output(sol_args, input=_input.encode())
-        response = apiService.submit(task, subtask, output.decode())
+        response = kspApiService.submit(task, subtask, output.decode())
         print(f"Tvá odpověď na podúkol {subtask} je {response.json()['verdict']}")
 
 
-apiService = ApiService()
+kspApiService = KSPkspApiService()
 
 if len(sys.argv) == 1 or sys.argv[1] not in ["list", "status", "submit", "downloadnew", "run"]:
     handleHelp()
