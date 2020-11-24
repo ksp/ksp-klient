@@ -37,7 +37,7 @@ def requestWrapper(fce):
 requests.get = requestWrapper(requests.get)
 requests.post = requestWrapper(requests.post)
 
-class KSPkspApiService:
+class KSPApiService:
     base_url: str = "https://ksp.mff.cuni.cz/api/"
     token_path: str = os.path.join(os.path.expanduser("~"), ".config", "ksp-api-token")
 
@@ -164,7 +164,7 @@ např. python3 ksp-klient.py run 32-Z4-1 python3 solver.py""")
         print(f"Tvá odpověď na podúkol {subtask} je {response.json()['verdict']}")
 
 
-kspApiService = KSPkspApiService()
+kspApiService = KSPApiService()
 
 if len(sys.argv) == 1 or sys.argv[1] not in ["list", "status", "submit", "downloadnew", "run"]:
     handleHelp()
