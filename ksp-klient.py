@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import sys
 import os
 import subprocess
@@ -15,21 +16,21 @@ try:
     import gettext
 except ModuleNotFoundError as e:
     print("Nemáš nainstalovaný modul gettext - pip install gettext")
-    sys.exit(1)  
+    sys.exit(1)
 
 
-def TranslateToCzech(Text: str):
-    Text = Text.replace("usage", "použití")
-    Text = Text.replace("show this help message and exit",
+def translateToCzech(text: str):
+    text = text.replace("usage", "použití")
+    text = text.replace("show this help message and exit",
                         "zobraz tuto nápovědu a ukonči program")
-    Text = Text.replace("error:", "chyba:")
-    Text = Text.replace("the following arguments are required:",
+    text = text.replace("error:", "chyba:")
+    text = text.replace("the following arguments are required:",
                         "tyto následující argumenty jsou vyžadovány:")
-    Text = Text.replace('optional arguments', 'volitelné argumenty')
-    Text = Text.replace('positional arguments', 'poziční argumenty')
-    Text = Text.replace('invalid choice: %(value)r (choose from %(choices)s)',
+    text = text.replace('optional arguments', 'volitelné argumenty')
+    text = text.replace('positional arguments', 'poziční argumenty')
+    text = text.replace('invalid choice: %(value)r (choose from %(choices)s)',
                         'neplatná volba: %(value)r (zvolte z %(choices)s)')
-    return Text
+    return text
 
 gettext.gettext = TranslateToCzech
 
@@ -46,7 +47,8 @@ def fileExists(name: str) -> None:
 def requestWrapper(fce):
     def wrapper(*args, **kvargs):
         ret = fce(*args, **kvargs)
-        print(ret.url)
+        #TODO: Print it in verbose mode
+        #print(ret.url)
         if ret.status_code != 200:
                 try:
                     print(ret.json())
@@ -66,7 +68,7 @@ class KSPApiService:
     token_path: str = os.path.join(os.path.expanduser("~"), ".config", "ksp-api-token")
 
     def __init__(
-        self, base_url: Optional[str] = None, 
+        self, base_url: Optional[str] = None,
         token_path: Optional[str] = None,
         training_ground: Optional[bool] = False
     ) -> None:
@@ -74,31 +76,34 @@ class KSPApiService:
             self.base_url = base_url
         if token_path is not None:
             self.token_path = token_path
-        
+
         fileExists(self.token_path)
         token: str = ""
         with open(self.token_path, "r") as f:
             token = f.readline().strip()
-        
+
         self.headers: dict = {"Authorization": f"Bearer {token}",}
-        if training_ground:
-            self.headers['set'] = 'cviciste'
-        
+        self.training_ground = training_ground
+
     def getList(self) -> Response:
-        return requests.get(self.base_url + 'tasks/list', headers=self.headers)
+        param = {}
+        if self.training_ground:
+            param['set'] = 'cviciste'
+        return requests.get(self.base_url + 'tasks/list', headers=self.headers,
+            params = param)
 
     def getStatus(self, task: str) -> Response:
         return requests.get(self.base_url + "tasks/status", headers=self.headers,
             params = {"task" : task})
-    
+
     def getTest(
         self, task: str, subtask: int,
         generate: bool = True
     ) -> Response:
-        return requests.post(self.base_url + "tasks/input", 
+        return requests.post(self.base_url + "tasks/input",
             params = {
-                "task" : task, 
-                "subtask" : subtask, 
+                "task" : task,
+                "subtask" : subtask,
                 "generate" : ("true" if generate else "false")
             }, headers=self.headers)
 
@@ -106,7 +111,7 @@ class KSPApiService:
         newHeaders = self.headers
         newHeaders['Content-Type'] = 'text/plain'
         return requests.post(self.base_url + "tasks/submit",
-            data = content.encode('utf-8'), headers=newHeaders, 
+            data = content.encode('utf-8'), headers=newHeaders,
             params = { "task" : task, "subtask" : subtask})
 
     def generate(self, task: str, subtask: int) -> Response:
@@ -131,12 +136,12 @@ def handleStatus(arguments: Namespace):
 
 def handleSubmit(arguments: Namespace):
     user_output = arguments.file.read()
-    
+
     r = kspApiService.submit(arguments.task, arguments.subtask, user_output)
-    print(r.text)
+    printNiceJson(r.json())
 
 
-def handleDownloadNew(arguments: Namespace):        
+def handleGenerate(arguments: Namespace):
     r = kspApiService.getTest(arguments.task, arguments.subtask)
     print(r.text)
 
@@ -155,35 +160,35 @@ def exampleUsage(text: str):
     return f'Příklad použití: {text}'
 
 
-parser = argparse.ArgumentParser(description='KSP api klient na odevzdávání opendata úloh')
+parser = argparse.ArgumentParser(description='KSP API klient na odevzdávání opendata úloh')
 
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
-parser.add_argument('-c', '--cviciste', help='Zobrazit/pracovat i s úlohama z cvičiště', action='store_true')
-parser.add_argument('-b', '--base_url', help='Nastavit jinou url adresu pro dotazy (např. pro testovací účely)')
+parser.add_argument('-c', '--cviciste', help='Zobrazit/pracovat i s úlohami z cvičiště', action='store_true')
+parser.add_argument('-b', '--base-url', help='Nastavit jinou URL pro dotazy (např. pro testovací účely)')
 
 subparsers = parser.add_subparsers(help='Vyberte jednu z následujících operací', dest='operation_name')
 parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohu, které lze odevzdávat',
-                epilog=exampleUsage('python3 ksp-klient.py list'))
+                epilog=exampleUsage('./ksp-klient.py list'))
 
 parser_status = subparsers.add_parser('status', help='Zobrazí stav dané úlohy',\
-                epilog=exampleUsage('python3 ksp-klient.py status 32-Z4-1'))
+                epilog=exampleUsage('./ksp-klient.py status 32-Z4-1'))
 parser_status.add_argument("task", help="kód úlohy")
 
 parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na server KSP',
-                epilog=exampleUsage('python3 ksp-klient.py submit 32-Z4-1 1 01.out'))
+                epilog=exampleUsage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
 parser_submit.add_argument("task", help="kód úlohy")
 parser_submit.add_argument("subtask", help="číslo podúkolu", type=int)
 parser_submit.add_argument("file", help="cesta k souboru, který chcete odevzdat", type=argparse.FileType(mode="r", encoding="utf-8"))
 
-parser_download_new = subparsers.add_parser('downloadnew', help='Vygeneruje a stáhne nový testovací soubor', \
-                epilog=exampleUsage('python3 ksp-klient.py downloadnew 32-Z4-1 1'))
+parser_download_new = subparsers.add_parser('generate', help='Vygeneruje a stáhne nový testovací vstup', \
+                epilog=exampleUsage('./ksp-klient.py generate 32-Z4-1 1'))
 parser_download_new.add_argument("task", help="kód úlohy")
 parser_download_new.add_argument("subtask", help="číslo podúkolu", type=int)
 
 parser_run = subparsers.add_parser('run', help='Spustí tvůj program na všechny podúkoly u dané úlohy', \
-                epilog=exampleUsage('python3 ksp-klient.py run 32-Z4-1 python3 solver.py'))
+                epilog=exampleUsage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
 parser_run.add_argument("task", help="kód úlohy")
-parser_run.add_argument("sol_args", nargs="+", help="argumenty, jak spustit zdoják")
+parser_run.add_argument("sol_args", nargs="+", help="argumenty, jak spustit tvůj program")
 
 arguments = parser.parse_args()
 
@@ -191,7 +196,7 @@ kspApiService = KSPApiService(base_url=arguments.base_url,\
                               training_ground=arguments.cviciste)
 
 operations: dict = {'list' : handleList, 'status': handleStatus, 'submit': handleSubmit, \
-                     'downloadnew': handleDownloadNew, 'run': handleRun}
+                     'generate': handleGenerate, 'run': handleRun}
 
 if arguments.operation_name == None:
     parser.print_help()
