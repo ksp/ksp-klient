@@ -2,10 +2,7 @@ import sys
 import os
 import subprocess
 import json
-import argparse
-from argparse import Namespace
 from typing import AnyStr, Optional
-
 
 try:
     import requests
@@ -14,6 +11,31 @@ except ModuleNotFoundError as e:
     print("Nemáš nainstalovaný modul requests - pip install requests")
     sys.exit(1)
 
+try:
+    import gettext
+except ModuleNotFoundError as e:
+    print("Nemáš nainstalovaný modul gettext - pip install gettext")
+    sys.exit(1)  
+
+
+def TranslateToCzech(Text: str):
+    Text = Text.replace("usage", "použití")
+    Text = Text.replace("show this help message and exit",
+                        "zobraz tuto nápovědu a ukonči program")
+    Text = Text.replace("error:", "chyba:")
+    Text = Text.replace("the following arguments are required:",
+                        "tyto následující argumenty jsou vyžadovány:")
+    Text = Text.replace('optional arguments', 'volitelné argumenty')
+    Text = Text.replace('positional arguments', 'poziční argumenty')
+    Text = Text.replace('invalid choice: %(value)r (choose from %(choices)s)',
+                        'neplatná volba: %(value)r (zvolte z %(choices)s)')
+    return Text
+
+gettext.gettext = TranslateToCzech
+
+## this must be imported after translation set up
+import argparse
+from argparse import Namespace
 
 def fileExists(name: str) -> None:
     if not os.path.exists(name):
@@ -133,7 +155,7 @@ def exampleUsage(text: str):
     return f'Příklad použití: {text}'
 
 
-parser = argparse.ArgumentParser(description='Process some integers.')
+parser = argparse.ArgumentParser(description='KSP api klient na odevzdávání opendata úloh')
 
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
 parser.add_argument('-c', '--cviciste', help='Zobrazit/pracovat i s úlohama z cvičiště', action='store_true')
