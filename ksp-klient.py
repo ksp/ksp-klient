@@ -105,8 +105,12 @@ class KSPApiService:
     def submit(self, task: str, subtask: int, content: AnyStr) -> Response:
         newHeaders = self.headers
         newHeaders['Content-Type'] = 'text/plain'
+
+        if type(content) == str:
+            content = content.encode('utf-8')
+
         return requests.post(self.base_url + "tasks/submit",
-            data = content.encode('utf-8'), headers=newHeaders,
+            data = content, headers=newHeaders,
             params = { "task" : task, "subtask" : subtask})
 
     def generate(self, task: str, subtask: int) -> Response:
