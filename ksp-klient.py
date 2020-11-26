@@ -32,7 +32,7 @@ def translateToCzech(text: str):
                         'neplatná volba: %(value)r (zvolte z %(choices)s)')
     return text
 
-gettext.gettext = TranslateToCzech
+gettext.gettext = translateToCzech
 
 ## this must be imported after translation set up
 import argparse
