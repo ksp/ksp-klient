@@ -2,6 +2,13 @@
 
 Konzolový klient pro odesílání open-datových úloh pomocí KSP API.
 
+Tento program lze používat a distribuovat pod licencí Creative Commons
+CC-BY-NC-SA 3.0. Jeho autory jsou organizátoři KSP <ksp@mff.cuni.cz>.
+
+Pokud najdeš jakoukoliv chybu nebo Tě napadne nějaké vylepšení,
+dej nám vědět, případně založ issue / pull request v našem GitHubovém
+projektu https://github.com/ksp/ksp-klient/.
+
 ## Před spuštěním
 
 Pro spuštění aplikace potřebuješ mít nainstalované:
