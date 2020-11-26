@@ -7,6 +7,7 @@ import os
 import subprocess
 import json
 import gettext
+import datetime
 from typing import AnyStr, Optional
 
 try:
@@ -126,6 +127,59 @@ def printNiceJson(json_text):
     print(json.dumps(json_text, indent=4, ensure_ascii=False))
 
 
+def czechTime(value, first_form, second_form, third_form):
+    value = round(value)
+    if value == 0:
+        return ''
+    if value == 1:
+        return f'{value} {first_form}'
+    elif value < 5:
+        return f'{value} {second_form}'
+    else:
+        return f'{value} {third_form}'
+
+
+def formatTime(subtask: dict):
+    if subtask['input_generated']:
+        if subtask['input_valid_until'].startswith('9999'):
+            return 'stále'
+
+        timedelta = datetime.datetime.fromisoformat(subtask['input_valid_until']) - datetime.datetime.now().astimezone()
+        
+        days, hours = divmod(timedelta.total_seconds(), 60*60*24)
+        hours, minutes = divmod(hours, 60*60)
+        minutes, seconds = divmod(minutes, 60)
+        
+        #print(days, hours, minutes, seconds)
+
+        day_str = czechTime(days, 'den', 'dny', 'dnů')
+        hour_str = czechTime(hours, 'hodina', 'hodiny', 'hodin')
+        minute_str = czechTime(minutes, 'minuta', 'minuty', 'minut')
+        second_str = czechTime(seconds, 'sekunda', 'sekundy', 'sekund')
+        ret = []
+        for x in [day_str, hour_str, minute_str, second_str]:
+            if x != '':
+                ret.append(x)
+
+        if len(ret) < 3:
+            return ' a '.join(ret)
+        else:
+            return ', '.join(ret[:-1]) + f' a {ret[-1]}' 
+    else:
+        return 'Nevygenerováno'
+
+
+def printTableStatus(json_text: dict):
+    print(f'Název úlohy: {json_text["name"]}')
+    print(f'Maximální počet bodů: {json_text["max_points"]}')
+    print(f'{"Test":<5}| {"Délka platnosti":<32}| {"Body":<8}| {"Výsledek"}')
+    print('-'*60)
+    for subtask in json_text['subtasks']:
+        points = f'{subtask["points"]}/{subtask["max_points"]}'
+        verdict = subtask['verdict'] if 'verdict' in subtask else ''
+        print(f'{subtask["id"]:<5}| {formatTime(subtask):<32}| {points:<8}| {verdict}')
+
+
 def handleList(arguments: Namespace):
     r = kspApiService.getList()
     printNiceJson(r.json())
@@ -133,7 +187,7 @@ def handleList(arguments: Namespace):
 
 def handleStatus(arguments: Namespace):
     r = kspApiService.getStatus(arguments.task)
-    printNiceJson(r.json())
+    printTableStatus(r.json())
 
 
 def handleSubmit(arguments: Namespace):
