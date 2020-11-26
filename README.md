@@ -17,7 +17,7 @@ Pro spuštění aplikace potřebuješ mít nainstalované:
   systému vaší linuxové distribuce)
 
 Dále si potřebuješ vygenerovat KSP API token [zde](https://ksp.mff.cuni.cz/auth/apitoken.cgi) (po přihlášení)
-a uložit ho si souboru s názvem `~/.config/ksp-api-token`. Pokud na Tvém počítači pracuje víc lidí,
+a uložit si ho do souboru s názvem `~/.config/ksp-api-token`. Pokud na Tvém počítači pracuje víc lidí,
 dej pozor, aby neměli právo tento soubor číst.
 
 ## První spuštění
@@ -29,7 +29,7 @@ dej pozor, aby neměli právo tento soubor číst.
 
 ## Použití
 
-Klient poskytuje základní funkce pro řešení open-datových úloh
+Klient poskytuje základní funkce pro odevzdávání open-datových úloh
 a nahrazuje webové rozhraní Odevzdávátka.
 
 * `list` - vypíše všechny úlohy, které lze aktuálně odevzdávat,
@@ -45,12 +45,12 @@ a nahrazuje webové rozhraní Odevzdávátka.
   který si můžeš přesměrovat do souboru.
     * použití: `./ksp-klient.py generate <úloha> <podúloha>`
     * příklad: `./ksp-klient.py generate 32-Z4-1 1`
-    * s přesměrováním: `./ksp-klient.py generate 32-Z4-1 1 >01.in`
+    * s přesměrováním: `./ksp-klient.py generate 32-Z4-1 1 > 01.in`
 * `submit` - odešle výstup pro určenou podúlohu na server KSP, načež vypíše,
   jestli byla Tvá odpověď správná a kolik bodů jsi dostal.
     * U příkazu specifikuješ, jakou úlohu a podúlohu chceš odevzdat
       a cestu k souboru s odpovědí.
-    * použití: `./ksp-klient.py submit <úloha> <podúloha> <cesta k soubory>`
+    * použití: `./ksp-klient.py submit <úloha> <podúloha> <cesta k souboru>`
     * příklad: `./ksp-klient.py submit 32-Z4-1 1 01.out`
 * `run` - pro každou podúlohu dané úlohy stáhne vstup, spustí s ním Tvůj program
   a výstup programu odešle jako odpověď.
