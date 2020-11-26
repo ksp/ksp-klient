@@ -8,13 +8,13 @@ from typing import AnyStr, Optional
 try:
     import requests
     from requests import Response
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     print("Nemáš nainstalovaný modul requests - pip install requests")
     sys.exit(1)
 
 try:
     import gettext
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     print("Nemáš nainstalovaný modul gettext - pip install gettext")
     sys.exit(1)
 
