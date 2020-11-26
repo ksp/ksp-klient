@@ -171,7 +171,7 @@ def formatTime(subtask: dict):
 
 def printTableStatus(json_text: dict):
     print(f'Název úlohy: {json_text["name"]}')
-    print(f'Maximální počet bodů: {json_text["max_points"]}')
+    print(f'Získané body: {json_text["points"]}/{json_text["max_points"]}')
     print(f'{"Test":<5}| {"Délka platnosti":<32}| {"Body":<8}| {"Výsledek"}')
     print('-'*60)
     for subtask in json_text['subtasks']:
