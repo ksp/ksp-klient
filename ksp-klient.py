@@ -208,7 +208,7 @@ def handleRun(arguments: Namespace):
     for subtask in range(1, numberSubtasks+1):
         _input = kspApiService.getTest(task, subtask).text
         output = subprocess.check_output(arguments.sol_args, input=_input.encode())
-        response = kspApiService.submit(task, subtask, output.decode())
+        response = kspApiService.submit(task, subtask, output)
         resp = response.json()
         print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
 
@@ -240,7 +240,7 @@ parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na danou 
                 epilog=exampleUsage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
 parser_submit.add_argument("task", help="kód úlohy")
 parser_submit.add_argument("subtask", help="číslo podúlohy", type=int)
-parser_submit.add_argument("file", help="cesta k souboru, který chcete odevzdat", type=argparse.FileType(mode="r", encoding="utf-8"))
+parser_submit.add_argument("file", help="cesta k souboru, který chcete odevzdat", type=argparse.FileType(mode="rb"))
 
 parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechny podúlohy dané úlohy', \
                 epilog=exampleUsage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
