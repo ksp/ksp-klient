@@ -1,6 +1,6 @@
 # ksp-klient
 
-Je konzolová aplikace pro odesílání open-datových úloh.
+Konzolová aplikace pro odesílání open-datových úloh.
 
 ## Před spuštěním
 
