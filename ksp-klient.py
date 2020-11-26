@@ -152,7 +152,8 @@ def handleRun(arguments: Namespace):
         _input = kspApiService.getTest(task, subtask).text
         output = subprocess.check_output(arguments.sol_args, input=_input.encode())
         response = kspApiService.submit(task, subtask, output.decode())
-        print(f"Podúloha {subtask}: {response.json()['verdict']}")
+        resp = response.json()
+        print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
 
 
 def exampleUsage(text: str):
