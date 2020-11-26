@@ -1,57 +1,54 @@
 # ksp-klient
 
-Je konzolová aplikace pro odesílání opendata úloh.
+Je konzolová aplikace pro odesílání open-datových úloh.
 
 ## Před spuštěním
------
 
-Pro spuštění aplikace potřebujete mít nainstalovaný
-* python s verzí minimálně 3.7
-* python balíček requests - `pip install requests`
+Pro spuštění aplikace potřebuješ mít nainstalované:
+* Python verze minimálně 3.6
+* pythoní balíček requests - `pip install requests` (případně z balíčkovacího
+  systému vaší linuxové distribuce)
 
-Dále je potřeba si vygenerovat KSP API token na
-této [url](https://ksp.mff.cuni.cz/auth/apitoken.cgi) (po přihlášení)
-a uložit ho si souboru s názvem `ksp-api-token` do adresářové struktury
-`~/.config/`.
+Dále si potřebuješ vygenerovat KSP API token [zde](https://ksp.mff.cuni.cz/auth/apitoken.cgi) (po přihlášení)
+a uložit ho si souboru s názvem `~/.config/ksp-api-token`. Pokud na Tvém počítači pracuje víc lidí,
+dej pozor, aby neměli právo tento soubor číst.
 
 ## První spuštění
----
 
-* Pokud jste na Unix-like systému, tak program spustíte jednoduše
-pomocí příkazu `./ksp-klient.py`.
-* Pokud program spouštíš na Windows, tak program
-spuštíš takto: `python3 ksp-klient.py`.
+* Pokud jsi na Unix-like systému, tak program spustíš jednoduše
+  příkazem `./ksp-klient.py`.
+* Pokud program spouštíš na Windows, tak třeba takto:
+  `python3 ksp-klient.py`.
 
 ## Použití
----
 
-Klient poskytuje základní funkce pro komunikaci s KSP serverem.
-Aplikace poskytuje následující operace:
+Klient poskytuje základní funkce pro řešení open-datových úloh
+a nahrazuje webové rozhraní Odevzdávátka.
+
 * `list` - vypíše všechny úlohy, které lze aktuálně odevzdávat,
-pokud před list přidáte přepínač -c, tak se vám zobrazí všechny
-úlohy, které lze odevzdávat do cvičiště
+  pokud před list přidáte přepínač -c, tak se vám zobrazí všechny
+  úlohy, které lze odevzdávat do Cvičiště.
     * použití: `./ksp-klient.py list` nebo `./ksp-klient.py -c list`
 * `status` - vypíše stav dané úlohy - název úlohy, kolik jsi dostal bodů,
-poté následují informace o jednotlivých podúloh
-    * general použití: `./ksp-klient.py status <úloha> `
-    * použití: `./ksp-klient.py status 32-Z4-1`
-* `submit` - odešle tvůj soubor, který vygeneroval tvůj program na
-server KSP a následně vypíše, jestli byla tvoje odpověď správná
-a kolik bodů jsi dostal.
-    * U příkazu specifikuješ, jakou úlohu a podúlohu chceš odevzdat
-    a cestu k tvému souboru, který chceš odevzdat
-    * general použití: `./ksp-klient.py submit <úloha> <podúloha> <cesta k soubory>`
-    * použití: `./ksp-klient.py submit 32-Z4-1 1 01.out`
+  poté následují informace o jednotlivých podúlohách.
+    * použití: `./ksp-klient.py status <úloha> `
+    * příklad: `./ksp-klient.py status 32-Z4-1`
 * `generate` - vygeneruje a stáhne nový vstup pro danou úlohu
-a podúlohu. Stáhnutý vstup vypíše program na standartní vstup,
-který můžeš následně přesměrovat do souboru.
-    * general použití: `./ksp-klient.py generate <úloha> <podúloha>`
-    * použití: `./ksp-klient.py generate 32-Z4-1 1`
-    * použití s přesměrování standartního vstup: `./ksp-klient.py generate 32-Z4-1 1 > 01.in`
-* `run` - program pro každou podúlohu u dané úlohy stáhne, spustí tvůj program,
-který řeší danou úlohu, a odevzdá zpět na server KSP. Zde bude více ukázek, pro různé
-jazyky, protože se spouštějí jinak.
-    * general použití: `./ksp-klient.py run <úloha> <argumenty, jak spustit tvůj program>`
-    * python: `./ksp-klient.py run 32-Z4-1 python3 program.py`
-    * c++, c (vše co generuje binárky), kde a.out je binárka: `./ksp-klient.py run 32-Z4-1 ./a.out`
-    * java, kde JavaProgram je výstup `javac JavaProgram.java`: `./ksp-klient.py run 32-Z4-1 java JavaProgram`
+  a podúlohu. Stažený soubor vypíše na svůj standardní výstup,
+  který si můžeš přesměrovat do souboru.
+    * použití: `./ksp-klient.py generate <úloha> <podúloha>`
+    * příklad: `./ksp-klient.py generate 32-Z4-1 1`
+    * s přesměrováním: `./ksp-klient.py generate 32-Z4-1 1 >01.in`
+* `submit` - odešle výstup pro určenou podúlohu na server KSP, načež vypíše,
+  jestli byla Tvá odpověď správná a kolik bodů jsi dostal.
+    * U příkazu specifikuješ, jakou úlohu a podúlohu chceš odevzdat
+      a cestu k souboru s odpovědí.
+    * použití: `./ksp-klient.py submit <úloha> <podúloha> <cesta k soubory>`
+    * příklad: `./ksp-klient.py submit 32-Z4-1 1 01.out`
+* `run` - pro každou podúlohu dané úlohy stáhne vstup, spustí s ním Tvůj program
+  a výstup programu odešle jako odpověď.
+    * použití: `./ksp-klient.py run <úloha> <argumenty, jak spustit tvůj program>`
+    * příklad pro Python: `./ksp-klient.py run 32-Z4-1 python3 program.py`
+    * příklad pro spustitelný program (třeba přeložené C++): `./ksp-klient.py run 32-Z4-1 ./program`
+    * příklad pro Javu: `./ksp-klient.py run 32-Z4-1 java program` (kde `program` je výstup
+      překladače `javac program.java`)
