@@ -145,11 +145,11 @@ def formatTime(subtask: dict):
             return 'stále'
 
         timedelta = datetime.datetime.fromisoformat(subtask['input_valid_until']) - datetime.datetime.now().astimezone()
-        
+
         days, hours = divmod(timedelta.total_seconds(), 60*60*24)
         hours, minutes = divmod(hours, 60*60)
         minutes, seconds = divmod(minutes, 60)
-        
+
         #print(days, hours, minutes, seconds)
 
         day_str = czechTime(days, 'den', 'dny', 'dnů')
@@ -164,7 +164,7 @@ def formatTime(subtask: dict):
         if len(ret) < 3:
             return ' a '.join(ret)
         else:
-            return ', '.join(ret[:-1]) + f' a {ret[-1]}' 
+            return ', '.join(ret[:-1]) + f' a {ret[-1]}'
     else:
         return 'Nevygenerováno'
 
