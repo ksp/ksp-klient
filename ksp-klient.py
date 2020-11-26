@@ -62,16 +62,16 @@ requests.get = requestWrapper(requests.get)
 requests.post = requestWrapper(requests.post)
 
 class KSPApiService:
-    base_url: str = "https://ksp.mff.cuni.cz/api/"
+    api_url: str = "https://ksp.mff.cuni.cz/api/"
     token_path: str = os.path.join(os.path.expanduser("~"), ".config", "ksp-api-token")
 
     def __init__(
-        self, base_url: Optional[str] = None,
+        self, api_url: Optional[str] = None,
         token_path: Optional[str] = None,
         training_ground: Optional[bool] = False
     ) -> None:
-        if base_url is not None:
-            self.base_url = base_url
+        if api_url is not None:
+            self.api_url = api_url
         if token_path is not None:
             self.token_path = token_path
 
@@ -87,18 +87,18 @@ class KSPApiService:
         param = {}
         if self.training_ground:
             param['set'] = 'cviciste'
-        return requests.get(self.base_url + 'tasks/list', headers=self.headers,
+        return requests.get(self.api_url + 'tasks/list', headers=self.headers,
             params = param)
 
     def getStatus(self, task: str) -> Response:
-        return requests.get(self.base_url + "tasks/status", headers=self.headers,
+        return requests.get(self.api_url + "tasks/status", headers=self.headers,
             params = {"task" : task})
 
     def getTest(
         self, task: str, subtask: int,
         generate: bool = True
     ) -> Response:
-        return requests.post(self.base_url + "tasks/input",
+        return requests.post(self.api_url + "tasks/input",
             params = {
                 "task" : task,
                 "subtask" : subtask,
@@ -112,12 +112,12 @@ class KSPApiService:
         if type(content) == str:
             content = content.encode('utf-8')
 
-        return requests.post(self.base_url + "tasks/submit",
+        return requests.post(self.api_url + "tasks/submit",
             data = content, headers=newHeaders,
             params = { "task" : task, "subtask" : subtask})
 
     def generate(self, task: str, subtask: int) -> Response:
-        return requests.post(self.base_url + "tasks/generate",
+        return requests.post(self.api_url + "tasks/generate",
             headers=self.headers,
             params = { "task" : task, "subtask" : subtask})
 
@@ -167,7 +167,7 @@ parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data
 
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
 parser.add_argument('-c', '--cviciste', help='Zobrazit/pracovat i s úlohami z cvičiště', action='store_true')
-parser.add_argument('-b', '--base-url', help='Nastavit jinou URL pro dotazy (např. pro testovací účely)')
+parser.add_argument('-a', '--api-url', help='Použít jiný server (např. pro testovací účely)')
 
 subparsers = parser.add_subparsers(help='Vyber jednu z následujících operací:', dest='operation_name')
 parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, které lze odevzdávat',
@@ -195,7 +195,7 @@ parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně
 
 arguments = parser.parse_args()
 
-kspApiService = KSPApiService(base_url=arguments.base_url,\
+kspApiService = KSPApiService(api_url=arguments.api_url,\
                               training_ground=arguments.cviciste)
 
 operations: dict = {'list' : handleList, 'status': handleStatus, 'submit': handleSubmit, \
