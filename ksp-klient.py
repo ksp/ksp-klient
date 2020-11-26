@@ -47,14 +47,14 @@ def fileExists(name: str) -> None:
 def requestWrapper(fce):
     def wrapper(*args, **kvargs):
         ret = fce(*args, **kvargs)
-        #TODO: Print it in verbose mode
-        #print(ret.url)
+        # TODO: Print it in verbose mode
+        # print(ret.url)
         if ret.status_code != 200:
-                try:
-                    print(ret.json())
-                except ValueError:
-                    print(ret.text)
-                sys.exit(1)
+            try:
+                print(ret.json())
+            except ValueError:
+                print(ret.text)
+            sys.exit(1)
         return ret
 
     return wrapper
