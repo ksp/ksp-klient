@@ -8,7 +8,6 @@ Je konzolová aplikace pro odesílání opendata úloh.
 Pro spuštění aplikace potřebujete mít nainstalovaný
 * python s verzí minimálně 3.7
 * python balíček requests - `pip install requests`
-* python balíček gettext - `pip install gettext`
 
 Dále je potřeba si vygenerovat KSP API token na
 této [url](https://ksp.mff.cuni.cz/auth/apitoken.cgi) (po přihlášení)
