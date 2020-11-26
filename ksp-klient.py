@@ -152,42 +152,42 @@ def handleRun(arguments: Namespace):
         _input = kspApiService.getTest(task, subtask).text
         output = subprocess.check_output(arguments.sol_args, input=_input.encode())
         response = kspApiService.submit(task, subtask, output.decode())
-        print(f"Tvá odpověď na podúkol {subtask} je {response.json()['verdict']}")
+        print(f"Podúloha {subtask}: {response.json()['verdict']}")
 
 
 def exampleUsage(text: str):
     return f'Příklad použití: {text}'
 
 
-parser = argparse.ArgumentParser(description='KSP API klient na odevzdávání opendata úloh')
+parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data úloh pomocí KSP API')
 
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
 parser.add_argument('-c', '--cviciste', help='Zobrazit/pracovat i s úlohami z cvičiště', action='store_true')
 parser.add_argument('-b', '--base-url', help='Nastavit jinou URL pro dotazy (např. pro testovací účely)')
 
-subparsers = parser.add_subparsers(help='Vyberte jednu z následujících operací', dest='operation_name')
-parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohu, které lze odevzdávat',
+subparsers = parser.add_subparsers(help='Vyber jednu z následujících operací:', dest='operation_name')
+parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, které lze odevzdávat',
                 epilog=exampleUsage('./ksp-klient.py list'))
 
 parser_status = subparsers.add_parser('status', help='Zobrazí stav dané úlohy',\
                 epilog=exampleUsage('./ksp-klient.py status 32-Z4-1'))
 parser_status.add_argument("task", help="kód úlohy")
 
-parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na server KSP',
-                epilog=exampleUsage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
-parser_submit.add_argument("task", help="kód úlohy")
-parser_submit.add_argument("subtask", help="číslo podúkolu", type=int)
-parser_submit.add_argument("file", help="cesta k souboru, který chcete odevzdat", type=argparse.FileType(mode="r", encoding="utf-8"))
-
 parser_download_new = subparsers.add_parser('generate', help='Vygeneruje a stáhne nový testovací vstup', \
                 epilog=exampleUsage('./ksp-klient.py generate 32-Z4-1 1'))
 parser_download_new.add_argument("task", help="kód úlohy")
-parser_download_new.add_argument("subtask", help="číslo podúkolu", type=int)
+parser_download_new.add_argument("subtask", help="číslo podúlohy", type=int)
 
-parser_run = subparsers.add_parser('run', help='Spustí tvůj program na všechny podúkoly u dané úlohy', \
+parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na danou podúlohu',
+                epilog=exampleUsage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
+parser_submit.add_argument("task", help="kód úlohy")
+parser_submit.add_argument("subtask", help="číslo podúlohy", type=int)
+parser_submit.add_argument("file", help="cesta k souboru, který chcete odevzdat", type=argparse.FileType(mode="r", encoding="utf-8"))
+
+parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechny podúlohy dané úlohy', \
                 epilog=exampleUsage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
 parser_run.add_argument("task", help="kód úlohy")
-parser_run.add_argument("sol_args", nargs="+", help="argumenty, jak spustit tvůj program")
+parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně jeho argumenty")
 
 arguments = parser.parse_args()
 
