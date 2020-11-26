@@ -19,18 +19,18 @@ except ModuleNotFoundError as e:
     sys.exit(1)
 
 
-def translateToCzech(text: str):
-    text = text.replace("usage", "použití")
-    text = text.replace("show this help message and exit",
-                        "zobraz tuto nápovědu a ukonči program")
-    text = text.replace("error:", "chyba:")
-    text = text.replace("the following arguments are required:",
-                        "tyto následující argumenty jsou vyžadovány:")
-    text = text.replace('optional arguments', 'volitelné argumenty')
-    text = text.replace('positional arguments', 'poziční argumenty')
-    text = text.replace('invalid choice: %(value)r (choose from %(choices)s)',
-                        'neplatná volba: %(value)r (zvolte z %(choices)s)')
-    return text
+def translateToCzech(message: str) -> str:
+    message = message.replace("usage", "použití")
+    message = message.replace("show this help message and exit",
+                              "zobraz tuto nápovědu a ukonči program")
+    message = message.replace("error:", "chyba:")
+    message = message.replace("the following arguments are required:",
+                              "tyto následující argumenty jsou vyžadovány:")
+    message = message.replace('optional arguments', 'volitelné argumenty')
+    message = message.replace('positional arguments', 'poziční argumenty')
+    message = message.replace('invalid choice: %(value)r (choose from %(choices)s)',
+                              'neplatná volba: %(value)r (zvolte z %(choices)s)')
+    return message
 
 gettext.gettext = translateToCzech
 
