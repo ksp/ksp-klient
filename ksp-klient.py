@@ -8,6 +8,7 @@ import subprocess
 import json
 import gettext
 import datetime
+import enum
 from typing import AnyStr, Optional
 
 try:
@@ -43,24 +44,39 @@ def fileExists(name: str) -> None:
         sys.exit(1)
 
 
-def requestWrapper(fce):
-    def wrapper(*args, **kvargs):
-        ret = fce(*args, **kvargs)
-        # TODO: Print it in verbose mode
-        # print(ret.url)
-        if ret.status_code != 200:
-            try:
-                print(ret.json())
-            except ValueError:
-                print(ret.text)
+class APIOperation(enum.Enum):
+    LIST = 0
+    STATUS = 1
+    GET_TEST = 2
+    SUBMIT = 3
+    GENERATE = 4
+
+    @property
+    def getURL(self) -> str:
+        urls = {
+            APIOperation.LIST: 'tasks/list',
+            APIOperation.STATUS: 'tasks/status',
+            APIOperation.GET_TEST: 'tasks/input',
+            APIOperation.SUBMIT: 'tasks/submit',
+            APIOperation.GENERATE: 'tasks/generate',
+        }
+
+        if self in urls:
+            return urls[self]
+        else:
+            print(f"Operace {self} nenalezena")
             sys.exit(1)
-        return ret
 
-    return wrapper
+    @property
+    def getHTTPMethod(self):
+        if self in [APIOperation.LIST, APIOperation.STATUS]:
+            return requests.get
+        elif self in [APIOperation.GET_TEST, APIOperation.SUBMIT, APIOperation.GENERATE]:
+            return requests.post
+        else:
+            print(f"Operace {self} nenalezena")
+            sys.exit(1)
 
-
-requests.get = requestWrapper(requests.get)
-requests.post = requestWrapper(requests.post)
 
 class KSPApiService:
     api_url: str = "https://ksp.mff.cuni.cz/api/"
@@ -84,40 +100,68 @@ class KSPApiService:
         self.headers: dict = {"Authorization": f"Bearer {token}",}
         self.training_ground = training_ground
 
+    def callApi(
+        self,
+        operation: APIOperation,
+        extra_headers: Optional[dict] = {},
+        extra_params: Optional[dict] = {},
+        data: Optional[dict] = {}
+    ) -> Response:
+        headers = {**self.headers, **extra_headers}
+
+        url = self.api_url + operation.getURL
+        http_method = operation.getHTTPMethod
+
+        try:
+            response: Response = http_method(
+                url,
+                headers=headers,
+                params=extra_params,
+                data=data)
+        except requests.exceptions.ConnectionError:
+            print("Klient se nedokázal připojit ke stránkám KSP")
+            print("Jsi připojen k internetu?")
+            sys.exit(1)
+
+        if response.status_code != 200:
+            if response.headers['content-type'] == 'application/json':
+                print(f"Stránka KSP nepřijala tvůj požadavek: {response.json()['errorMsg']}")
+            else:
+                print(f"Stránka KSP odpověděla chybou, která nemá json odpověď!")
+            sys.exit(1)
+
+        return response
+
     def getList(self) -> Response:
         param = {}
         if self.training_ground:
             param['set'] = 'cviciste'
-        return requests.get(self.api_url + 'tasks/list', headers=self.headers,
-            params = param)
+        return self.callApi(APIOperation.LIST, extra_params=param)
 
     def getStatus(self, task: str) -> Response:
-        return requests.get(self.api_url + "tasks/status", headers=self.headers,
-            params = {"task" : task})
+        return self.callApi(APIOperation.STATUS, extra_params ={"task" : task})
 
     def getTest(
         self, task: str, subtask: int,
         generate: bool = True
     ) -> Response:
-        return requests.post(self.api_url + "tasks/input",
-            params = {
+        return self.callApi(APIOperation.GET_TEST,
+            extra_params = {
                 "task" : task,
                 "subtask" : subtask,
                 "generate" : ("true" if generate else "false")
-            }, headers=self.headers)
+            })
 
     def submit(self, task: str, subtask: int, content: AnyStr) -> Response:
         if type(content) == str:
             content = content.encode('utf-8')
 
-        return requests.post(self.api_url + "tasks/submit",
-            data = content, headers={**self.headers, "Content-Type":"text/plain"},
-            params = { "task" : task, "subtask" : subtask})
+        return self.callApi(APIOperation.SUBMIT,
+            extra_headers={"Content-Type":"text/plain"},
+            extra_params = { "task" : task, "subtask" : subtask})
 
     def generate(self, task: str, subtask: int) -> Response:
-        return requests.post(self.api_url + "tasks/generate",
-            headers=self.headers,
-            params = { "task" : task, "subtask" : subtask})
+        return self.callApi(APIOperation.GENERATE, extra_params = { "task" : task, "subtask" : subtask})
 
 
 def printNiceJson(json_text):
