@@ -85,7 +85,8 @@ class KSPApiService:
     def __init__(
         self, api_url: Optional[str] = None,
         token_path: Optional[str] = None,
-        training_ground: Optional[bool] = False
+        training_ground: Optional[bool] = False,
+        verbose: Optional[bool] = False
     ) -> None:
         if api_url is not None:
             self.api_url = api_url
@@ -99,6 +100,7 @@ class KSPApiService:
 
         self.headers: dict = {"Authorization": f"Bearer {token}",}
         self.training_ground = training_ground
+        self.verbose = verbose
 
     def callApi(
         self,
@@ -111,6 +113,9 @@ class KSPApiService:
 
         url = self.api_url + operation.getURL
         http_method = operation.getHTTPMethod
+
+        if self.verbose:
+            print(f"Posílám požadavek na: {url}")
 
         try:
             response: Response = http_method(
@@ -128,6 +133,10 @@ class KSPApiService:
                 print(f"Stránka KSP nepřijala tvůj požadavek: {response.json()['errorMsg']}")
             else:
                 print(f"Stránka KSP odpověděla chybou, která nemá json odpověď!")
+
+                if self.verbose:
+                    print(response.text())
+
             sys.exit(1)
 
         return response
@@ -291,7 +300,8 @@ parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně
 arguments = parser.parse_args()
 
 kspApiService = KSPApiService(api_url=arguments.api_url,\
-                              training_ground=arguments.cviciste)
+                              training_ground=arguments.cviciste,
+                              verbose=arguments.verbose)
 
 operations: dict = {'list' : handleList, 'status': handleStatus, 'submit': handleSubmit, \
                      'generate': handleGenerate, 'run': handleRun}
