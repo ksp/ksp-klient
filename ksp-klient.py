@@ -44,40 +44,6 @@ def fileExists(name: str) -> None:
         sys.exit(1)
 
 
-class APIOperation(enum.Enum):
-    LIST = 0
-    STATUS = 1
-    GET_TEST = 2
-    SUBMIT = 3
-    GENERATE = 4
-
-    @property
-    def getURL(self) -> str:
-        urls = {
-            APIOperation.LIST: 'tasks/list',
-            APIOperation.STATUS: 'tasks/status',
-            APIOperation.GET_TEST: 'tasks/input',
-            APIOperation.SUBMIT: 'tasks/submit',
-            APIOperation.GENERATE: 'tasks/generate',
-        }
-
-        if self in urls:
-            return urls[self]
-        else:
-            print(f"Operace {self} nenalezena")
-            sys.exit(1)
-
-    @property
-    def getHTTPMethod(self):
-        if self in [APIOperation.LIST, APIOperation.STATUS]:
-            return requests.get
-        elif self in [APIOperation.GET_TEST, APIOperation.SUBMIT, APIOperation.GENERATE]:
-            return requests.post
-        else:
-            print(f"Operace {self} nenalezena")
-            sys.exit(1)
-
-
 class KSPApiService:
     api_url: str = "https://ksp.mff.cuni.cz/api/"
     token_path: str = os.path.join(os.path.expanduser("~"), ".config", "ksp-api-token")
@@ -104,15 +70,15 @@ class KSPApiService:
 
     def callApi(
         self,
-        operation: APIOperation,
-        extra_headers: Optional[dict] = {},
-        extra_params: Optional[dict] = {},
-        data: Optional[dict] = {}
+        operation, # (url completion, callable fce from request package)
+        extra_headers: dict = {},
+        extra_params: dict = {},
+        data: Optional[AnyStr] = None
     ) -> Response:
         headers = {**self.headers, **extra_headers}
 
-        url = self.api_url + operation.getURL
-        http_method = operation.getHTTPMethod
+        url = self.api_url + operation[0]
+        http_method = operation[1]
 
         if self.verbose:
             print(f"Posílám požadavek na: {url}")
@@ -135,7 +101,7 @@ class KSPApiService:
                 print(f"Stránka KSP odpověděla chybou, která nemá json odpověď!")
 
                 if self.verbose:
-                    print(response.text())
+                    print(response.text)
 
             sys.exit(1)
 
@@ -145,16 +111,16 @@ class KSPApiService:
         param = {}
         if self.training_ground:
             param['set'] = 'cviciste'
-        return self.callApi(APIOperation.LIST, extra_params=param)
+        return self.callApi(('tasks/list', requests.get) , extra_params=param)
 
     def getStatus(self, task: str) -> Response:
-        return self.callApi(APIOperation.STATUS, extra_params ={"task" : task})
+        return self.callApi(('tasks/status', requests.get), extra_params ={"task" : task})
 
     def getTest(
         self, task: str, subtask: int,
         generate: bool = True
     ) -> Response:
-        return self.callApi(APIOperation.GET_TEST,
+        return self.callApi(('tasks/input', requests.post),
             extra_params = {
                 "task" : task,
                 "subtask" : subtask,
@@ -165,12 +131,14 @@ class KSPApiService:
         if type(content) == str:
             content = content.encode('utf-8')
 
-        return self.callApi(APIOperation.SUBMIT,
+        return self.callApi(('tasks/submit', requests.post),
             extra_headers={"Content-Type":"text/plain"},
-            extra_params = { "task" : task, "subtask" : subtask})
+            extra_params = { "task" : task, "subtask" : subtask},
+            data=content)
 
     def generate(self, task: str, subtask: int) -> Response:
-        return self.callApi(APIOperation.GENERATE, extra_params = { "task" : task, "subtask" : subtask})
+        return self.callApi(('tasks/generate', requests.post),
+            extra_params = { "task" : task, "subtask" : subtask})
 
 
 def printNiceJson(json_text):
