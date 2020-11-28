@@ -38,11 +38,6 @@ gettext.gettext = translateToCzech
 import argparse
 from argparse import Namespace
 
-def fileExists(name: str) -> None:
-    if not os.path.exists(name):
-        print(f"Soubor {name} neexistuje")
-        sys.exit(1)
-
 
 def error(*args, **kvargs):
     def eprint(*args, **kvargs):
@@ -66,10 +61,14 @@ class KSPApiService:
         if token_path is not None:
             self.token_path = token_path
 
-        fileExists(self.token_path)
-        token: str = ""
-        with open(self.token_path, "r") as f:
-            token = f.readline().strip()
+        try:
+            with open(self.token_path, "r") as f:
+                self.token = f.readline().strip()
+        except Exception as e:
+            error(f"Chyba při čtení souboru {self.token_path}.")
+            error(f"Důvod: {e}")
+            error(f"Tento soubor otevíráme, aby jsme mohli použít tvůj API token při komunikaci se serverem.")
+            sys.exit(1)
 
         self.training_ground = training_ground
         self.verbose = verbose
