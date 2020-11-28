@@ -113,38 +113,44 @@ class KSPApiService:
 
         return response
 
-    def getList(self) -> Response:
+    def getList(self):
         param = {}
         if self.training_ground:
             param['set'] = 'cviciste'
-        return self.callApi(('tasks/list', requests.get) , extra_params=param)
+        response = self.callApi(('tasks/list', requests.get) , extra_params=param)
+        return response.json()
 
-    def getStatus(self, task: str) -> Response:
-        return self.callApi(('tasks/status', requests.get), extra_params ={"task" : task})
+    def getStatus(self, task: str):
+        response = self.callApi(('tasks/status', requests.get),
+            extra_params ={"task" : task})
+        return response.json()
 
     def getTest(
         self, task: str, subtask: int,
         generate: bool = True
-    ) -> Response:
-        return self.callApi(('tasks/input', requests.post),
+    ) -> str:
+        response = self.callApi(('tasks/input', requests.post),
             extra_params = {
                 "task" : task,
                 "subtask" : subtask,
                 "generate" : ("true" if generate else "false")
             })
+        return response.text
 
-    def submit(self, task: str, subtask: int, content: Union[str, bytes]) -> Response:
+    def submit(self, task: str, subtask: int, content: Union[str, bytes]):
         if isinstance(content, str):
             content = content.encode('utf-8')
 
-        return self.callApi(('tasks/submit', requests.post),
+        response = self.callApi(('tasks/submit', requests.post),
             extra_headers={"Content-Type":"text/plain"},
             extra_params = { "task" : task, "subtask" : subtask},
             data=content)
+        return response.json()
 
-    def generate(self, task: str, subtask: int) -> Response:
-        return self.callApi(('tasks/generate', requests.post),
+    def generate(self, task: str, subtask: int) -> str:
+        response = self.callApi(('tasks/generate', requests.post),
             extra_params = { "task" : task, "subtask" : subtask})
+        return response.text
 
 
 def printNiceJson(json_text):
@@ -205,35 +211,32 @@ def printTableStatus(json_text: dict) -> None:
 
 
 def handleList(arguments: Namespace) -> None:
-    r = kspApiService.getList()
-    printNiceJson(r.json())
+    printNiceJson(kspApiService.getList())
 
 
 def handleStatus(arguments: Namespace) -> None:
-    r = kspApiService.getStatus(arguments.task)
-    printTableStatus(r.json())
+    printTableStatus(kspApiService.getStatus(arguments.task))
 
 
 def handleSubmit(arguments: Namespace) -> None:
     user_output = arguments.file.read()
 
     r = kspApiService.submit(arguments.task, arguments.subtask, user_output)
-    printNiceJson(r.json())
+    printNiceJson(r)
 
 
 def handleGenerate(arguments: Namespace) -> None:
     r = kspApiService.getTest(arguments.task, arguments.subtask)
-    print(r.text)
+    print(r)
 
 
 def handleRun(arguments: Namespace) -> None:
     task = arguments.task
-    numberSubtasks = len(kspApiService.getStatus(task).json()["subtasks"])
+    numberSubtasks = len(kspApiService.getStatus(task)["subtasks"])
     for subtask in range(1, numberSubtasks+1):
-        _input = kspApiService.getTest(task, subtask).text
+        _input = kspApiService.getTest(task, subtask)
         output = subprocess.check_output(arguments.sol_args, input=_input.encode())
-        response = kspApiService.submit(task, subtask, output)
-        resp = response.json()
+        resp = kspApiService.submit(task, subtask, output)
         print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
 
 
