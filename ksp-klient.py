@@ -145,7 +145,7 @@ def printNiceJson(json_text):
     print(json.dumps(json_text, indent=4, ensure_ascii=False))
 
 
-def czechTime(value, first_form, second_form, third_form):
+def czechTime(value: Union[float,int], first_form: str, second_form: str, third_form: str) -> str:
     value = round(value)
     if value == 0:
         return ''
@@ -157,7 +157,7 @@ def czechTime(value, first_form, second_form, third_form):
         return f'{value} {third_form}'
 
 
-def formatTime(subtask: dict):
+def formatTime(subtask: dict) -> str:
     if subtask['input_generated']:
         if subtask['input_valid_until'].startswith('9999'):
             return 'stále'
@@ -187,7 +187,7 @@ def formatTime(subtask: dict):
         return 'Nevygenerováno'
 
 
-def printTableStatus(json_text: dict):
+def printTableStatus(json_text: dict) -> None:
     print(f'Název úlohy: {json_text["name"]}')
     print(f'Získané body: {json_text["points"]}/{json_text["max_points"]}')
     print(f'{"Test":<5}| {"Délka platnosti":<32}| {"Body":<8}| {"Výsledek"}')
@@ -198,29 +198,29 @@ def printTableStatus(json_text: dict):
         print(f'{subtask["id"]:<5}| {formatTime(subtask):<32}| {points:<8}| {verdict}')
 
 
-def handleList(arguments: Namespace):
+def handleList(arguments: Namespace) -> None:
     r = kspApiService.getList()
     printNiceJson(r.json())
 
 
-def handleStatus(arguments: Namespace):
+def handleStatus(arguments: Namespace) -> None:
     r = kspApiService.getStatus(arguments.task)
     printTableStatus(r.json())
 
 
-def handleSubmit(arguments: Namespace):
+def handleSubmit(arguments: Namespace) -> None:
     user_output = arguments.file.read()
 
     r = kspApiService.submit(arguments.task, arguments.subtask, user_output)
     printNiceJson(r.json())
 
 
-def handleGenerate(arguments: Namespace):
+def handleGenerate(arguments: Namespace) -> None:
     r = kspApiService.getTest(arguments.task, arguments.subtask)
     print(r.text)
 
 
-def handleRun(arguments: Namespace):
+def handleRun(arguments: Namespace) -> None:
     task = arguments.task
     numberSubtasks = len(kspApiService.getStatus(task).json()["subtasks"])
     for subtask in range(1, numberSubtasks+1):
@@ -231,7 +231,7 @@ def handleRun(arguments: Namespace):
         print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
 
 
-def exampleUsage(text: str):
+def exampleUsage(text: str) -> str:
     return f'Příklad použití: {text}'
 
 
