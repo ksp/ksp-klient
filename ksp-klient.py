@@ -9,7 +9,7 @@ import json
 import gettext
 import datetime
 import enum
-from typing import AnyStr, Optional
+from typing import AnyStr, Optional, Union
 
 try:
     import requests
@@ -127,8 +127,8 @@ class KSPApiService:
                 "generate" : ("true" if generate else "false")
             })
 
-    def submit(self, task: str, subtask: int, content: AnyStr) -> Response:
-        if type(content) == str:
+    def submit(self, task: str, subtask: int, content: Union[str, bytes]) -> Response:
+        if isinstance(content, str):
             content = content.encode('utf-8')
 
         return self.callApi(('tasks/submit', requests.post),
