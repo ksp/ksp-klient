@@ -19,7 +19,7 @@ except ModuleNotFoundError:
     sys.exit(1)
 
 
-def translateToCzech(message: str) -> str:
+def translate_to_czech(message: str) -> str:
     message = message.replace("usage", "použití")
     message = message.replace("show this help message and exit",
                               "zobraz tuto nápovědu a ukonči program")
@@ -32,7 +32,8 @@ def translateToCzech(message: str) -> str:
                               'neplatná volba: %(value)r (zvolte z %(choices)s)')
     return message
 
-gettext.gettext = translateToCzech
+
+gettext.gettext = translate_to_czech
 
 ## this must be imported after translation set up
 import argparse
@@ -73,9 +74,9 @@ class KSPApiService:
         self.training_ground = training_ground
         self.verbose = verbose
 
-    def callApi(
+    def call_api(
         self,
-        operation, # (url completion, callable fce from request package)
+        operation,  # (url completion, callable fce from request package)
         extra_headers: dict = {},
         extra_params: dict = {},
         data: Optional[AnyStr] = None
@@ -111,27 +112,27 @@ class KSPApiService:
 
         return response
 
-    def getList(self):
+    def get_list(self):
         param = {}
         if self.training_ground:
             param['set'] = 'cviciste'
-        response = self.callApi(('tasks/list', requests.get) , extra_params=param)
+        response = self.call_api(('tasks/list', requests.get), extra_params=param)
         return response.json()
 
-    def getStatus(self, task: str):
-        response = self.callApi(('tasks/status', requests.get),
-            extra_params ={"task" : task})
+    def get_status(self, task: str):
+        response = self.call_api(('tasks/status', requests.get),
+            extra_params={"task": task})
         return response.json()
 
-    def getTest(
+    def get_test(
         self, task: str, subtask: int,
         generate: bool = True
     ) -> str:
-        response = self.callApi(('tasks/input', requests.post),
-            extra_params = {
-                "task" : task,
-                "subtask" : subtask,
-                "generate" : ("true" if generate else "false")
+        response = self.call_api(('tasks/input', requests.post),
+            extra_params={
+                "task": task,
+                "subtask": subtask,
+                "generate": ("true" if generate else "false")
             })
         return response.text
 
@@ -139,23 +140,23 @@ class KSPApiService:
         if isinstance(content, str):
             content = content.encode('utf-8')
 
-        response = self.callApi(('tasks/submit', requests.post),
-            extra_headers={"Content-Type":"text/plain"},
-            extra_params = { "task" : task, "subtask" : subtask},
+        response = self.call_api(('tasks/submit', requests.post),
+            extra_headers={"Content-Type": "text/plain"},
+            extra_params={"task": task, "subtask": subtask},
             data=content)
         return response.json()
 
     def generate(self, task: str, subtask: int) -> str:
-        response = self.callApi(('tasks/generate', requests.post),
-            extra_params = { "task" : task, "subtask" : subtask})
+        response = self.call_api(('tasks/generate', requests.post),
+            extra_params={"task": task, "subtask": subtask})
         return response.text
 
 
-def printNiceJson(json_text):
+def print_nice_json(json_text):
     print(json.dumps(json_text, indent=4, ensure_ascii=False))
 
 
-def czechTime(value: Union[float,int], first_form: str, second_form: str, third_form: str) -> str:
+def czech_time(value: Union[float, int], first_form: str, second_form: str, third_form: str) -> str:
     value = round(value)
     if value == 0:
         return ''
@@ -167,7 +168,7 @@ def czechTime(value: Union[float,int], first_form: str, second_form: str, third_
         return f'{value} {third_form}'
 
 
-def formatTime(subtask: dict) -> str:
+def format_time(subtask: dict) -> str:
     if subtask['input_generated']:
         if subtask['input_valid_until'].startswith('9999'):
             return 'stále'
@@ -180,10 +181,10 @@ def formatTime(subtask: dict) -> str:
 
         #print(days, hours, minutes, seconds)
 
-        day_str = czechTime(days, 'den', 'dny', 'dnů')
-        hour_str = czechTime(hours, 'hodina', 'hodiny', 'hodin')
-        minute_str = czechTime(minutes, 'minuta', 'minuty', 'minut')
-        second_str = czechTime(seconds, 'sekunda', 'sekundy', 'sekund')
+        day_str = czech_time(days, 'den', 'dny', 'dnů')
+        hour_str = czech_time(hours, 'hodina', 'hodiny', 'hodin')
+        minute_str = czech_time(minutes, 'minuta', 'minuty', 'minut')
+        second_str = czech_time(seconds, 'sekunda', 'sekundy', 'sekund')
         ret = []
         for x in [day_str, hour_str, minute_str, second_str]:
             if x != '':
@@ -197,7 +198,7 @@ def formatTime(subtask: dict) -> str:
         return 'Nevygenerováno'
 
 
-def printTableStatus(json_text: dict) -> None:
+def print_table_status(json_text: dict) -> None:
     print(f'Název úlohy: {json_text["name"]}')
     print(f'Získané body: {json_text["points"]}/{json_text["max_points"]}')
     print(f'{"Test":<5}| {"Délka platnosti":<32}| {"Body":<8}| {"Výsledek"}')
@@ -205,40 +206,40 @@ def printTableStatus(json_text: dict) -> None:
     for subtask in json_text['subtasks']:
         points = f'{subtask["points"]}/{subtask["max_points"]}'
         verdict = subtask.get('verdict', "")
-        print(f'{subtask["id"]:<5}| {formatTime(subtask):<32}| {points:<8}| {verdict}')
+        print(f'{subtask["id"]:<5}| {format_time(subtask):<32}| {points:<8}| {verdict}')
 
 
-def handleList(arguments: Namespace) -> None:
-    printNiceJson(kspApiService.getList())
+def handle_list(arguments: Namespace) -> None:
+    print_nice_json(kspApiService.get_list())
 
 
-def handleStatus(arguments: Namespace) -> None:
-    printTableStatus(kspApiService.getStatus(arguments.task))
+def handle_status(arguments: Namespace) -> None:
+    print_table_status(kspApiService.get_status(arguments.task))
 
 
-def handleSubmit(arguments: Namespace) -> None:
+def handle_submit(arguments: Namespace) -> None:
     user_output = arguments.file.read()
 
     r = kspApiService.submit(arguments.task, arguments.subtask, user_output)
-    printNiceJson(r)
+    print_nice_json(r)
 
 
-def handleGenerate(arguments: Namespace) -> None:
-    r = kspApiService.getTest(arguments.task, arguments.subtask)
+def handle_generate(arguments: Namespace) -> None:
+    r = kspApiService.get_test(arguments.task, arguments.subtask)
     print(r)
 
 
-def handleRun(arguments: Namespace) -> None:
+def handle_run(arguments: Namespace) -> None:
     task = arguments.task
-    numberSubtasks = len(kspApiService.getStatus(task)["subtasks"])
+    numberSubtasks = len(kspApiService.get_status(task)["subtasks"])
     for subtask in range(1, numberSubtasks+1):
-        _input = kspApiService.getTest(task, subtask)
+        _input = kspApiService.get_test(task, subtask)
         output = subprocess.check_output(arguments.sol_args, input=_input.encode())
         resp = kspApiService.submit(task, subtask, output)
         print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
 
 
-def exampleUsage(text: str) -> str:
+def example_usage(text: str) -> str:
     return f'Příklad použití: {text}'
 
 
@@ -250,38 +251,38 @@ parser.add_argument('-a', '--api-url', help='Použít jiný server (např. pro t
 
 subparsers = parser.add_subparsers(help='Vyber jednu z následujících operací:', dest='operation_name')
 parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, které lze odevzdávat',
-                epilog=exampleUsage('./ksp-klient.py list'))
+                epilog=example_usage('./ksp-klient.py list'))
 
-parser_status = subparsers.add_parser('status', help='Zobrazí stav dané úlohy',\
-                epilog=exampleUsage('./ksp-klient.py status 32-Z4-1'))
+parser_status = subparsers.add_parser('status', help='Zobrazí stav dané úlohy',
+                epilog=example_usage('./ksp-klient.py status 32-Z4-1'))
 parser_status.add_argument("task", help="kód úlohy")
 
-parser_download_new = subparsers.add_parser('generate', help='Vygeneruje a stáhne nový testovací vstup', \
-                epilog=exampleUsage('./ksp-klient.py generate 32-Z4-1 1'))
+parser_download_new = subparsers.add_parser('generate', help='Vygeneruje a stáhne nový testovací vstup',
+                epilog=example_usage('./ksp-klient.py generate 32-Z4-1 1'))
 parser_download_new.add_argument("task", help="kód úlohy")
 parser_download_new.add_argument("subtask", help="číslo podúlohy", type=int)
 
 parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na danou podúlohu',
-                epilog=exampleUsage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
+                epilog=example_usage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
 parser_submit.add_argument("task", help="kód úlohy")
 parser_submit.add_argument("subtask", help="číslo podúlohy", type=int)
 parser_submit.add_argument("file", help="cesta k souboru, který chcete odevzdat", type=argparse.FileType(mode="rb"))
 
-parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechny podúlohy dané úlohy', \
-                epilog=exampleUsage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
+parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechny podúlohy dané úlohy',
+                epilog=example_usage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
 parser_run.add_argument("task", help="kód úlohy")
 parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně jeho argumenty")
 
 arguments = parser.parse_args()
 
-kspApiService = KSPApiService(api_url=arguments.api_url,\
+kspApiService = KSPApiService(api_url=arguments.api_url,
                               training_ground=arguments.cviciste,
                               verbose=arguments.verbose)
 
-operations: dict = {'list' : handleList, 'status': handleStatus, 'submit': handleSubmit, \
-                     'generate': handleGenerate, 'run': handleRun}
+operations: dict = {'list': handle_list, 'status': handle_status, 'submit': handle_submit,
+                    'generate': handle_generate, 'run': handle_run}
 
-if arguments.operation_name == None:
+if arguments.operation_name is None:
     parser.print_help()
 else:
     operations[arguments.operation_name](arguments)
