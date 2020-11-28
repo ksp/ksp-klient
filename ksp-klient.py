@@ -71,7 +71,6 @@ class KSPApiService:
         with open(self.token_path, "r") as f:
             token = f.readline().strip()
 
-        self.headers: dict = {"Authorization": f"Bearer {token}",}
         self.training_ground = training_ground
         self.verbose = verbose
 
@@ -82,7 +81,7 @@ class KSPApiService:
         extra_params: dict = {},
         data: Optional[AnyStr] = None
     ) -> Response:
-        headers = {**self.headers, **extra_headers}
+        headers = {"Authorization": f"Bearer {self.token}", **extra_headers}
 
         url = self.api_url + operation[0]
         http_method = operation[1]
