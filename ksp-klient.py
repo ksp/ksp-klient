@@ -200,7 +200,7 @@ def printTableStatus(json_text: dict) -> None:
     print('-'*60)
     for subtask in json_text['subtasks']:
         points = f'{subtask["points"]}/{subtask["max_points"]}'
-        verdict = subtask['verdict'] if 'verdict' in subtask else ''
+        verdict = subtask.get('verdict', "")
         print(f'{subtask["id"]:<5}| {formatTime(subtask):<32}| {points:<8}| {verdict}')
 
 
