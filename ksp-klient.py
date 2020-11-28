@@ -44,6 +44,13 @@ def fileExists(name: str) -> None:
         sys.exit(1)
 
 
+def error(*args, **kvargs):
+    def eprint(*args, **kvargs):
+        print(*args, file=sys.stderr, **kvargs)
+    eprint("\033[91m", end="")
+    eprint(*args, "\033[0m", **kvargs)
+
+
 class KSPApiService:
     api_url: str = "https://ksp.mff.cuni.cz/api/"
     token_path: str = os.path.join(os.path.expanduser("~"), ".config", "ksp-api-token")
@@ -90,15 +97,14 @@ class KSPApiService:
                 params=extra_params,
                 data=data)
         except requests.exceptions.ConnectionError:
-            print("Klient se nedokázal připojit ke stránkám KSP")
-            print("Jsi připojen k internetu?")
+            error("Chyba: Nelze se připojit k serveru")
             sys.exit(1)
 
         if response.status_code != 200:
             if response.headers['content-type'] == 'application/json':
-                print(f"Stránka KSP nepřijala tvůj požadavek: {response.json()['errorMsg']}")
+                error(f"Chyba: {response.json()['errorMsg']}")
             else:
-                print(f"Stránka KSP odpověděla chybou, která nemá json odpověď!")
+                error(f"Chyba: {response.status_code} - {response.reason}")
 
                 if self.verbose:
                     print(response.text)
