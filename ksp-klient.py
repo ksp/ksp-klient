@@ -58,7 +58,6 @@ class KSPApiService:
     def __init__(
         self, api_url: Optional[str] = None,
         token_path: Optional[str] = None,
-        training_ground: Optional[bool] = False,
         verbose: Optional[bool] = False
     ) -> None:
         if api_url is not None:
@@ -75,7 +74,6 @@ class KSPApiService:
             error(f"Tento soubor otevíráme, aby jsme mohli použít tvůj API token při komunikaci se serverem.")
             sys.exit(1)
 
-        self.training_ground = training_ground
         self.verbose = verbose
 
     def call_api(
@@ -116,9 +114,9 @@ class KSPApiService:
 
         return response
 
-    def get_list(self):
+    def get_list(self, training_ground: bool):
         param = {}
-        if self.training_ground:
+        if training_ground:
             param['set'] = 'cviciste'
         response = self.call_api(('tasks/list', requests.get), extra_params=param)
         return response.json()
@@ -214,7 +212,7 @@ def print_table_status(json_text: dict) -> None:
 
 
 def handle_list(arguments: Namespace) -> None:
-    print_nice_json(kspApiService.get_list())
+    print_nice_json(kspApiService.get_list(arguments.cviciste))
 
 
 def handle_status(arguments: Namespace) -> None:
@@ -250,12 +248,12 @@ def example_usage(text: str) -> str:
 parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data úloh pomocí KSP API')
 
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
-parser.add_argument('-c', '--cviciste', help='Zobrazit/pracovat i s úlohami z cvičiště', action='store_true')
 parser.add_argument('-a', '--api-url', help='Použít jiný server (např. pro testovací účely)')
 
 subparsers = parser.add_subparsers(help='Vyber jednu z následujících operací:', dest='operation_name')
 parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, které lze odevzdávat',
                 epilog=example_usage('./ksp-klient.py list'))
+parser_list.add_argument('-c', '--cviciste', help='Zobrazit úlohy z cvičiště', action='store_true')
 
 parser_status = subparsers.add_parser('status', help='Zobrazí stav dané úlohy',
                 epilog=example_usage('./ksp-klient.py status 32-Z4-1'))
@@ -280,7 +278,6 @@ parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně
 arguments = parser.parse_args()
 
 kspApiService = KSPApiService(api_url=arguments.api_url,
-                              training_ground=arguments.cviciste,
                               verbose=arguments.verbose)
 
 operations: dict = {'list': handle_list, 'status': handle_status, 'submit': handle_submit,

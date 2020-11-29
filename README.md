@@ -33,9 +33,9 @@ Klient poskytuje základní funkce pro odevzdávání open-datových úloh
 a nahrazuje webové rozhraní Odevzdávátka.
 
 * `list` - vypíše všechny úlohy, které lze aktuálně odevzdávat,
-  pokud před list přidáte přepínač -c, tak se vám zobrazí všechny
+  pokud za list přidáte přepínač -c, tak se vám zobrazí všechny
   úlohy, které lze odevzdávat do Cvičiště.
-    * použití: `./ksp-klient.py list` nebo `./ksp-klient.py -c list`
+    * použití: `./ksp-klient.py list` nebo `./ksp-klient.py list -c`
 * `status` - vypíše stav dané úlohy - název úlohy, kolik jsi dostal bodů,
   poté následují informace o jednotlivých podúlohách.
     * použití: `./ksp-klient.py status <úloha> `
