@@ -58,7 +58,7 @@ class KSPApiService:
     def __init__(
         self, api_url: Optional[str] = None,
         token_path: Optional[str] = None,
-        verbose: Optional[bool] = False
+        verbose: bool = False
     ) -> None:
         if api_url is not None:
             self.api_url = api_url
