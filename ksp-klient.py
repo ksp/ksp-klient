@@ -43,8 +43,12 @@ from argparse import Namespace
 def error(*args, **kvargs):
     def eprint(*args, **kvargs):
         print(*args, file=sys.stderr, **kvargs)
-    eprint("\033[91m", end="")
-    eprint(*args, "\033[0m", **kvargs)
+
+    color_end = ""
+    if sys.stderr.isatty():
+        eprint("\033[31m", end="")
+        color_end = "\033[0m"
+    eprint(*args, color_end, **kvargs)
 
 
 class KSPApiService:
