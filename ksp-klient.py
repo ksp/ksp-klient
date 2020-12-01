@@ -261,7 +261,7 @@ parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
 parser.add_argument('-a', '--api-url', help='Použít jiný server (např. pro testovací účely)')
 parser.add_argument('-t', '--token-path', help='Nastavit jinou cestu k souboru s tokenem')
-parser.add_argument('-b', '--ca-bundle-path', help='Nastavit cestu SSL certifikátům, podle kterého se bude ověřovat https spojení')
+parser.add_argument('-b', '--ca-bundle-path', help='Nastavit cestu k souboru s SSL certifikáty, podle kterých se bude ověřovat https spojení')
 
 subparsers = parser.add_subparsers(help='Vyber jednu z následujících operací:', dest='operation_name')
 parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, které lze odevzdávat',
