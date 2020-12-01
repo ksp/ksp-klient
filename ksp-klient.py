@@ -249,6 +249,7 @@ parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data
 
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
 parser.add_argument('-a', '--api-url', help='Použít jiný server (např. pro testovací účely)')
+parser.add_argument('-t', '--token-path', help='Nastavit jinou cestu k souboru s tokenem')
 
 subparsers = parser.add_subparsers(help='Vyber jednu z následujících operací:', dest='operation_name')
 parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, které lze odevzdávat',
@@ -278,6 +279,7 @@ parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně
 arguments = parser.parse_args()
 
 kspApiService = KSPApiService(api_url=arguments.api_url,
+                              token_path=arguments.token_path,
                               verbose=arguments.verbose)
 
 operations: dict = {'list': handle_list, 'status': handle_status, 'submit': handle_submit,
