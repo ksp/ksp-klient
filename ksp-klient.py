@@ -58,12 +58,14 @@ class KSPApiService:
     def __init__(
         self, api_url: Optional[str] = None,
         token_path: Optional[str] = None,
-        verbose: bool = False
+        verbose: bool = False,
+        ca_bundle_path: Optional[str] = None
     ) -> None:
         if api_url is not None:
             self.api_url = api_url
         if token_path is not None:
             self.token_path = token_path
+        self.ca_bundle_path = ca_bundle_path
 
         try:
             with open(self.token_path, "r") as f:
@@ -92,13 +94,22 @@ class KSPApiService:
             print(f"Posílám požadavek na: {url}")
 
         try:
+            extra_kvargs = {}
+            if self.ca_bundle_path is not None:
+                extra_kvargs['verify'] = self.ca_bundle_path
+
             response: Response = http_method(
                 url,
                 headers=headers,
                 params=extra_params,
-                data=data)
-        except requests.exceptions.ConnectionError:
+                data=data,
+                **extra_kvargs)
+        except (requests.exceptions.ConnectionError, OSError) as e:
             error("Chyba: Nelze se připojit k serveru")
+
+            if self.verbose:
+                print(e)
+
             sys.exit(1)
 
         if response.status_code != 200:
@@ -250,6 +261,7 @@ parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data
 parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
 parser.add_argument('-a', '--api-url', help='Použít jiný server (např. pro testovací účely)')
 parser.add_argument('-t', '--token-path', help='Nastavit jinou cestu k souboru s tokenem')
+parser.add_argument('-b', '--ca-bundle-path', help='Nastavit cestu SSL certifikátům, podle kterého se bude ověřovat https spojení')
 
 subparsers = parser.add_subparsers(help='Vyber jednu z následujících operací:', dest='operation_name')
 parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, které lze odevzdávat',
@@ -280,7 +292,8 @@ arguments = parser.parse_args()
 
 kspApiService = KSPApiService(api_url=arguments.api_url,
                               token_path=arguments.token_path,
-                              verbose=arguments.verbose)
+                              verbose=arguments.verbose,
+                              ca_bundle_path=arguments.ca_bundle_path)
 
 operations: dict = {'list': handle_list, 'status': handle_status, 'submit': handle_submit,
                     'generate': handle_generate, 'run': handle_run}
