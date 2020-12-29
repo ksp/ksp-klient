@@ -9,7 +9,7 @@ import json
 import gettext
 import datetime
 import enum
-from typing import AnyStr, Optional, Union
+from typing import AnyStr, Optional, Union, Iterator
 
 try:
     import requests
@@ -83,7 +83,8 @@ class KSPApiService:
         operation,  # (url completion, callable fce from request package)
         extra_headers: dict = {},
         extra_params: dict = {},
-        data: Optional[AnyStr] = None
+        data: Optional[AnyStr] = None,
+        stream: bool = False
     ) -> Response:
         headers = {"Authorization": f"Bearer {self.token}", **extra_headers}
 
@@ -94,7 +95,8 @@ class KSPApiService:
             print(f"Posílám požadavek na: {url}")
 
         try:
-            extra_kvargs = {}
+            extra_kvargs: dict = {}
+            extra_kvargs['stream'] = stream
             if self.ca_bundle_path is not None:
                 extra_kvargs['verify'] = self.ca_bundle_path
 
@@ -137,17 +139,34 @@ class KSPApiService:
             extra_params={"task": task})
         return response.json()
 
-    def get_test(
+    def _test(
         self, task: str, subtask: int,
-        generate: bool = True
-    ) -> str:
+        generate: bool = True, stream: bool = False
+    ) -> Response:
         response = self.call_api(('tasks/input', requests.post),
             extra_params={
                 "task": task,
                 "subtask": subtask,
                 "generate": ("true" if generate else "false")
-            })
-        return response.text
+            },
+            stream=stream
+        )
+
+        return response
+
+    def get_test(
+        self, task: str, subtask: int,
+        generate: bool = True
+    ) -> bytes:
+        response = self._test(task, subtask, generate=generate)
+        return response.content
+
+    def get_test_iterator(
+        self, task: str, subtask: int,
+        generate: bool = True, chunk_size: int = 1024
+    ) -> Iterator[bytes]:
+        response = self._test(task, subtask, generate=generate, stream=True)
+        return response.iter_content(chunk_size=chunk_size)
 
     def submit(self, task: str, subtask: int, content: Union[str, bytes]):
         if isinstance(content, str):
@@ -238,8 +257,10 @@ def handle_submit(arguments: Namespace) -> None:
 
 
 def handle_generate(arguments: Namespace) -> None:
-    r = kspApiService.get_test(arguments.task, arguments.subtask)
-    print(r)
+    iterator = kspApiService.get_test_iterator(arguments.task, arguments.subtask,
+        chunk_size=arguments.chunk_size)
+    for chunk in iterator:
+        sys.stdout.buffer.write(chunk)
 
 
 def handle_run(arguments: Namespace) -> None:
@@ -247,7 +268,7 @@ def handle_run(arguments: Namespace) -> None:
     numberSubtasks = len(kspApiService.get_status(task)["subtasks"])
     for subtask in range(1, numberSubtasks+1):
         _input = kspApiService.get_test(task, subtask)
-        output = subprocess.check_output(arguments.sol_args, input=_input.encode())
+        output = subprocess.check_output(arguments.sol_args, input=_input)
         resp = kspApiService.submit(task, subtask, output)
         print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
 
@@ -276,6 +297,7 @@ parser_download_new = subparsers.add_parser('generate', help='Vygeneruje a stáh
                 epilog=example_usage('./ksp-klient.py generate 32-Z4-1 1'))
 parser_download_new.add_argument("task", help="kód úlohy")
 parser_download_new.add_argument("subtask", help="číslo podúlohy", type=int)
+parser_download_new.add_argument('--chunk-size', help='Nastaví velikost stahovaného bloku', action='store', type=int, default=1024)
 
 parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na danou podúlohu',
                 epilog=example_usage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
