@@ -293,11 +293,11 @@ parser_status = subparsers.add_parser('status', help='Zobrazí stav dané úlohy
                 epilog=example_usage('./ksp-klient.py status 32-Z4-1'))
 parser_status.add_argument("task", help="kód úlohy")
 
-parser_download_new = subparsers.add_parser('generate', help='Vygeneruje a stáhne nový testovací vstup',
+parser_generate = subparsers.add_parser('generate', help='Vygeneruje a stáhne nový testovací vstup',
                 epilog=example_usage('./ksp-klient.py generate 32-Z4-1 1'))
-parser_download_new.add_argument("task", help="kód úlohy")
-parser_download_new.add_argument("subtask", help="číslo podúlohy", type=int)
-parser_download_new.add_argument('--chunk-size', help='Nastaví velikost stahovaného bloku', action='store', type=int, default=1024)
+parser_generate.add_argument("task", help="kód úlohy")
+parser_generate.add_argument("subtask", help="číslo podúlohy", type=int)
+parser_generate.add_argument('--chunk-size', help='Nastaví velikost stahovaného bloku', action='store', type=int, default=1024)
 
 parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na danou podúlohu',
                 epilog=example_usage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
