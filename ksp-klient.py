@@ -51,6 +51,10 @@ def error(*args, **kvargs):
     eprint(*args, color_end, **kvargs)
 
 
+def print_nice_json(json_text):
+    print(json.dumps(json_text, indent=4, ensure_ascii=False))
+
+
 class KSPApiService:
     api_url: str = "https://ksp.mff.cuni.cz/api/"
     token_path: str = os.path.join(os.path.expanduser("~"), ".config", "ksp-api-token")
@@ -58,7 +62,7 @@ class KSPApiService:
     def __init__(
         self, api_url: Optional[str] = None,
         token_path: Optional[str] = None,
-        verbose: bool = False,
+        verbose: int = 0,
         ca_bundle_path: Optional[str] = None
     ) -> None:
         if api_url is not None:
@@ -91,7 +95,7 @@ class KSPApiService:
         url = self.api_url + operation[0]
         http_method = operation[1]
 
-        if self.verbose:
+        if self.verbose > 0:
             print(f"Posílám požadavek na: {url}")
 
         try:
@@ -109,7 +113,7 @@ class KSPApiService:
         except (requests.exceptions.ConnectionError, OSError) as e:
             error("Chyba: Nelze se připojit k serveru")
 
-            if self.verbose:
+            if self.verbose > 0:
                 print(e)
 
             sys.exit(1)
@@ -120,10 +124,14 @@ class KSPApiService:
             else:
                 error(f"Chyba: {response.status_code} - {response.reason}")
 
-                if self.verbose:
+                if self.verbose > 0:
                     print(response.text)
 
             sys.exit(1)
+
+        if self.verbose > 1 and response.headers['content-type'] == 'application/json' \
+                and not stream:
+            print_nice_json(response.json())
 
         return response
 
@@ -182,10 +190,6 @@ class KSPApiService:
         response = self.call_api(('tasks/generate', requests.post),
             extra_params={"task": task, "subtask": subtask})
         return response.text
-
-
-def print_nice_json(json_text):
-    print(json.dumps(json_text, indent=4, ensure_ascii=False))
 
 
 def czech_time(value: Union[float, int], first_form: str, second_form: str, third_form: str) -> str:
@@ -279,7 +283,7 @@ def example_usage(text: str) -> str:
 
 parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data úloh pomocí KSP API')
 
-parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='store_true')
+parser.add_argument('-v', '--verbose', help='Zobrazit debug log', action='count', default=0)
 parser.add_argument('-a', '--api-url', help='Použít jiný server (např. pro testovací účely)')
 parser.add_argument('-t', '--token-path', help='Nastavit jinou cestu k souboru s tokenem')
 parser.add_argument('-b', '--ca-bundle-path', help='Nastavit cestu k souboru s SSL certifikáty, podle kterých se bude ověřovat https spojení')
