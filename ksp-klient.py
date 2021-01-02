@@ -10,8 +10,7 @@ import gettext
 import datetime
 import enum
 import tempfile
-from typing import AnyStr, Optional, Union, Iterator, IO
-
+from typing import Any, AnyStr, Optional, Union, Iterator, IO
 try:
     import requests
     from requests import Response
@@ -136,17 +135,39 @@ class KSPApiService:
 
         return response
 
-    def get_list(self, training_ground: bool):
+    def call_api_json(
+        self,
+        operation,  # (url completion, callable fce from request package)
+        extra_headers: dict = {},
+        extra_params: dict = {},
+        data: Optional[AnyStr] = None
+    ) -> Any:
+        response = self.call_api(
+            operation,
+            extra_headers=extra_headers,
+            extra_params=extra_params,
+            data=data)
+
+        if response.headers['content-type'] != 'application/json':
+            error("Odpověď od serveru není json!")
+            sys.exit(1)
+        else:
+            json_ret = response.json()
+
+        if self.verbose > 1:
+            print_nice_json(json_ret)
+
+        return json_ret
+
+    def get_list(self, training_ground: bool) -> Any:
         param = {}
         if training_ground:
             param['set'] = 'cviciste'
-        response = self.call_api(('tasks/list', requests.get), extra_params=param)
-        return response.json()
+        return self.call_api_json(('tasks/list', requests.get), extra_params=param)
 
-    def get_status(self, task: str):
-        response = self.call_api(('tasks/status', requests.get),
+    def get_status(self, task: str) -> Any:
+        return self.call_api_json(('tasks/status', requests.get),
             extra_params={"task": task})
-        return response.json()
 
     def _test(
         self, task: str, subtask: int,
@@ -180,10 +201,10 @@ class KSPApiService:
     def save_test_to_tmp(
         self, task: str, subtask: int,
         generate: bool = True, chunk_size: int = 1024,
-        delete_on_close = True
+        delete_on_close: bool = True
     ) -> IO:
         iterator = self.get_test_iterator(task, subtask, generate=generate, chunk_size=chunk_size)
-        
+
         file = tempfile.NamedTemporaryFile(prefix=f'ksp-input-[{task}]-{subtask}_', suffix='.in',
             delete=delete_on_close)
 
@@ -195,16 +216,15 @@ class KSPApiService:
 
         file.seek(0)
         return file
-        
-    def submit(self, task: str, subtask: int, content: Union[str, bytes]):
+
+    def submit(self, task: str, subtask: int, content: Union[str, bytes]) -> Any:
         if isinstance(content, str):
             content = content.encode('utf-8')
 
-        response = self.call_api(('tasks/submit', requests.post),
+        return self.call_api_json(('tasks/submit', requests.post),
             extra_headers={"Content-Type": "text/plain"},
             extra_params={"task": task, "subtask": subtask},
             data=content)
-        return response.json()
 
     def generate(self, task: str, subtask: int) -> str:
         response = self.call_api(('tasks/generate', requests.post),
