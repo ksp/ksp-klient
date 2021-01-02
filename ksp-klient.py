@@ -9,7 +9,8 @@ import json
 import gettext
 import datetime
 import enum
-from typing import AnyStr, Optional, Union, Iterator
+import tempfile
+from typing import AnyStr, Optional, Union, Iterator, IO
 
 try:
     import requests
@@ -176,6 +177,25 @@ class KSPApiService:
         response = self._test(task, subtask, generate=generate, stream=True)
         return response.iter_content(chunk_size=chunk_size)
 
+    def save_test_to_tmp(
+        self, task: str, subtask: int,
+        generate: bool = True, chunk_size: int = 1024,
+        delete_on_close = True
+    ) -> IO:
+        iterator = self.get_test_iterator(task, subtask, generate=generate, chunk_size=chunk_size)
+        
+        file = tempfile.NamedTemporaryFile(prefix=f'ksp-input-[{task}]-{subtask}_', suffix='.in',
+            delete=delete_on_close)
+
+        if self.verbose > 0:
+            print(f"Úplná cesta k temp souboru: {file.name}")
+
+        for chunk in iterator:
+            file.write(chunk)
+
+        file.seek(0)
+        return file
+        
     def submit(self, task: str, subtask: int, content: Union[str, bytes]):
         if isinstance(content, str):
             content = content.encode('utf-8')
@@ -271,10 +291,13 @@ def handle_run(arguments: Namespace) -> None:
     task = arguments.task
     numberSubtasks = len(kspApiService.get_status(task)["subtasks"])
     for subtask in range(1, numberSubtasks+1):
-        _input = kspApiService.get_test(task, subtask)
-        output = subprocess.check_output(arguments.sol_args, input=_input)
-        resp = kspApiService.submit(task, subtask, output)
-        print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
+        file = kspApiService.save_test_to_tmp(task, subtask, delete_on_close=arguments.delete_on_close)
+        try:
+            output = subprocess.check_output(arguments.sol_args, stdin=file)
+            resp = kspApiService.submit(task, subtask, output)
+            print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
+        finally:
+            file.close()
 
 
 def example_usage(text: str) -> str:
@@ -313,6 +336,8 @@ parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechn
                 epilog=example_usage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
 parser_run.add_argument("task", help="kód úlohy")
 parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně jeho argumenty")
+parser_run.add_argument("--keep-tmp", help="Vstupy se automaticky nesmažou a zůstanou v temp adresáři",
+                dest="delete_on_close", action="store_false")
 
 arguments = parser.parse_args()
 
