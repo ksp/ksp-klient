@@ -11,6 +11,7 @@ import datetime
 import enum
 import tempfile
 from typing import Any, AnyStr, Optional, Union, Iterator, IO
+
 try:
     import requests
     from requests import Response
@@ -128,10 +129,6 @@ class KSPApiService:
                     print(response.text)
 
             sys.exit(1)
-
-        if self.verbose > 1 and response.headers['content-type'] == 'application/json' \
-                and not stream:
-            print_nice_json(response.json())
 
         return response
 
