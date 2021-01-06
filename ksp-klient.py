@@ -301,7 +301,10 @@ def handle_generate(arguments: Namespace) -> None:
     iterator = kspApiService.get_test_iterator(arguments.task, arguments.subtask,
         chunk_size=arguments.chunk_size)
     for chunk in iterator:
-        sys.stdout.buffer.write(chunk)
+        if arguments.output_file == sys.stdout:
+            arguments.output_file.buffer.write(chunk)
+        else:
+            arguments.output_file.write(chunk)
 
 
 def handle_run(arguments: Namespace) -> None:
@@ -342,6 +345,8 @@ parser_generate = subparsers.add_parser('generate', help='Vygeneruje a stáhne n
 parser_generate.add_argument("task", help="kód úlohy")
 parser_generate.add_argument("subtask", help="číslo podúlohy", type=int)
 parser_generate.add_argument('--chunk-size', help='Nastaví velikost stahovaného bloku', action='store', type=int, default=1024)
+parser_generate.add_argument("output_file", help="Název souboru pro uložení vstupu do souboru. Jinak se vstup vypisuje na terminál.",
+                nargs="?", default="-", type=argparse.FileType(mode="wb"))
 
 parser_submit = subparsers.add_parser('submit', help='Odešle odpověd na danou podúlohu',
                 epilog=example_usage('./ksp-klient.py submit 32-Z4-1 1 01.out'))
