@@ -42,16 +42,18 @@ a nahrazuje webové rozhraní Odevzdávátka.
     * příklad: `./ksp-klient.py status 32-Z4-1`
 * `generate` - vygeneruje a stáhne nový vstup pro danou úlohu
   a podúlohu. Stažený soubor vypíše na svůj standardní výstup,
-  který si můžeš přesměrovat do souboru.
-    * použití: `./ksp-klient.py generate <úloha> <podúloha>`
+  pokud není uveden název souboru. Jinak se výstup uloží do souboru.
+    * použití: `./ksp-klient.py generate <úloha> <podúloha> [<soubor>]`
     * příklad: `./ksp-klient.py generate 32-Z4-1 1`
-    * s přesměrováním: `./ksp-klient.py generate 32-Z4-1 1 > 01.in`
+    * s uložením do souboru: `./ksp-klient.py generate 32-Z4-1 1 01.in`
 * `submit` - odešle výstup pro určenou podúlohu na server KSP, načež vypíše,
   jestli byla Tvá odpověď správná a kolik bodů jsi dostal.
     * U příkazu specifikuješ, jakou úlohu a podúlohu chceš odevzdat
       a cestu k souboru s odpovědí.
     * použití: `./ksp-klient.py submit <úloha> <podúloha> <cesta k souboru>`
     * příklad: `./ksp-klient.py submit 32-Z4-1 1 01.out`
+    * Pokud chceš zadat výstup přímo z konzole, tak místo souboru uveď `-`
+    * příklad: `./ksp-klient.py submit 32-Z4-1 1 -`
 * `run` - pro každou podúlohu dané úlohy stáhne vstup, spustí s ním Tvůj program
   a výstup programu odešle jako odpověď.
     * použití: `./ksp-klient.py run <úloha> <argumenty, jak spustit tvůj program>`
