@@ -10,6 +10,7 @@ import gettext
 import datetime
 import enum
 import tempfile
+import re
 from typing import Any, AnyStr, Optional, Union, Iterator, IO
 
 try:
@@ -202,7 +203,8 @@ class KSPApiService:
     ) -> IO:
         iterator = self.get_test_iterator(task, subtask, generate=generate, chunk_size=chunk_size)
 
-        file = tempfile.NamedTemporaryFile(prefix=f'ksp-input-[{task}]-{subtask}_', suffix='.in',
+        sanitized_task = re.sub("[^a-zA-Z0-9_-]", "_", task)
+        file = tempfile.NamedTemporaryFile(prefix=f'ksp-input-{sanitized_task}-{subtask}_', suffix='.in',
             delete=delete_on_close)
 
         if self.verbose > 0:
