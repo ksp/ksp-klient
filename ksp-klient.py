@@ -367,7 +367,7 @@ parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechn
                 epilog=example_usage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
 parser_run.add_argument("task", help="kód úlohy")
 parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně jeho argumenty")
-parser_run.add_argument("--subtasks", help="Spustí Tvůj program pouze na uvedené podúlohy (seznam oddělený čárkami)", type=int_list)
+parser_run.add_argument("-s", "--subtasks", help="Spustí Tvůj program pouze na uvedené podúlohy (seznam oddělený čárkami)", type=int_list)
 parser_run.add_argument("--keep-tmp", help="Vstupy se automaticky nesmažou a zůstanou v temp adresáři",
                 dest="delete_on_close", action="store_false")
 
