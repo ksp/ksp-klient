@@ -330,7 +330,25 @@ def example_usage(text: str) -> str:
 
 
 def int_list(string):
-    return [int(x) for x in string.split(",")]
+    result = []
+    for range_string in string.split(","):
+        if "-" in range_string:
+            range_parts = range_string.partition("-")
+            if "-" in range_parts[2]:
+                raise ValueError
+            range_start = int(range_parts[0])
+            range_end = int(range_parts[2])
+            if range_end < range_start:
+                raise argparse.ArgumentTypeError("začátek intervalu nemůže být větší než konec")
+            value = range(range_start, range_end+1)
+            if len(value) > 1000000:
+                raise argparse.ArgumentTypeError("interval je moc velký")
+            result.extend(value)
+        else:
+            result.append(int(range_string))
+    if len(result) > len(set(result)):
+        raise argparse.ArgumentTypeError("seznam obsahuje duplicitní hodnoty")
+    return result
 
 
 parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data úloh pomocí KSP API')
@@ -367,7 +385,7 @@ parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechn
                 epilog=example_usage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
 parser_run.add_argument("task", help="kód úlohy")
 parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně jeho argumenty")
-parser_run.add_argument("-s", "--subtasks", help="Spustí Tvůj program pouze na uvedené podúlohy (seznam oddělený čárkami)", type=int_list)
+parser_run.add_argument("-s", "--subtasks", help="Spustí Tvůj program pouze na uvedené podúlohy (seznam čísel a intervalů oddělený čárkami, např. '1,2,4-6')", type=int_list)
 parser_run.add_argument("--keep-tmp", help="Vstupy se automaticky nesmažou a zůstanou v temp adresáři",
                 dest="delete_on_close", action="store_false")
 
