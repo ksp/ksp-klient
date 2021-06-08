@@ -346,8 +346,6 @@ def int_list(string):
             result.extend(value)
         else:
             result.append(int(range_string))
-    if len(result) > len(set(result)):
-        raise argparse.ArgumentTypeError("seznam obsahuje duplicitní hodnoty")
     return result
 
 
