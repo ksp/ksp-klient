@@ -311,8 +311,11 @@ def handle_generate(arguments: Namespace) -> None:
 
 def handle_run(arguments: Namespace) -> None:
     task = arguments.task
-    numberSubtasks = len(kspApiService.get_status(task)["subtasks"])
-    for subtask in range(1, numberSubtasks+1):
+    subtasks = arguments.subtasks
+    if subtasks is None:
+        numberSubtasks = len(kspApiService.get_status(task)["subtasks"])
+        subtasks = range(1, numberSubtasks+1)
+    for subtask in subtasks:
         file = kspApiService.save_test_to_tmp(task, subtask, delete_on_close=arguments.delete_on_close)
         try:
             output = subprocess.check_output(arguments.sol_args, stdin=file)
@@ -324,6 +327,26 @@ def handle_run(arguments: Namespace) -> None:
 
 def example_usage(text: str) -> str:
     return f'Příklad použití: {text}'
+
+
+def int_list(string):
+    result = []
+    for range_string in string.split(","):
+        if "-" in range_string:
+            range_parts = range_string.partition("-")
+            if "-" in range_parts[2]:
+                raise ValueError
+            range_start = int(range_parts[0])
+            range_end = int(range_parts[2])
+            if range_end < range_start:
+                raise argparse.ArgumentTypeError("začátek intervalu nemůže být větší než konec")
+            value = range(range_start, range_end+1)
+            if len(value) > 1000000:
+                raise argparse.ArgumentTypeError("interval je moc velký")
+            result.extend(value)
+        else:
+            result.append(int(range_string))
+    return result
 
 
 parser = argparse.ArgumentParser(description='Klient na odevzdávání open-data úloh pomocí KSP API')
@@ -360,6 +383,7 @@ parser_run = subparsers.add_parser('run', help='Spustí Tvůj program na všechn
                 epilog=example_usage('./ksp-klient.py run 32-Z4-1 python3 solver.py'))
 parser_run.add_argument("task", help="kód úlohy")
 parser_run.add_argument("sol_args", nargs="+", help="Tvůj program a případně jeho argumenty")
+parser_run.add_argument("-s", "--subtasks", help="Spustí Tvůj program pouze na uvedené podúlohy (seznam čísel a intervalů oddělený čárkami, např. '1,2,4-6')", type=int_list)
 parser_run.add_argument("--keep-tmp", help="Vstupy se automaticky nesmažou a zůstanou v temp adresáři",
                 dest="delete_on_close", action="store_false")
 
