@@ -318,27 +318,27 @@ def handle_run(arguments: Namespace) -> None:
     for subtask in subtasks:
         file = kspApiService.save_test_to_tmp(task, subtask, delete_on_close=arguments.delete_on_close)
         try:
-            output = subprocess.check_output(arguments.sol_args, stdin=file)
+            output = subprocess.check_output(arguments.sol_args, stdin=file, stderr=subprocess.PIPE)
             resp = kspApiService.submit(task, subtask, output)
             print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
         except subprocess.CalledProcessError as e:
             # oznam chybu
-            msg = f"Tvoje řešítko spadlo... :("
+            msg = f"Podúloha {subtask}: Tvoje řešítko spadlo... :("
             if e.returncode:
                 msg += f" Program skončil s návratovým kódem {e.returncode}"
-            print(msg)
+            error(msg)
 
             # jestlise nám podařilo zachytit nějaký výstup, tak ho vytiskneme
             if e.stdout or e.stderr:
-                print("Před ukončením Tvůj program vypsal následující výstup:")
+                error("Před ukončením Tvůj program vypsal následující výstup:")
                 if e.stdout:
-                    print("--------- Standardní výstup Tvého programu -------")
-                    print(e.stdout)
-                    print("------- Konec standardního výstupu -----")
+                    error("--------- Standardní výstup Tvého programu ---------")
+                    error(e.stdout)
+                    error("--------- Konec standardního výstupu ---------")
                 if e.stderr:
-                    print("--------- Chybový výstup Tvého programu -------")
-                    print(e.stdout)
-                    print("------- Konec chybového výstupu -----")
+                    error("--------- Chybový výstup Tvého programu ---------")
+                    error(e.stderr)
+                    error("--------- Konec chybového výstupu ---------")
         finally:
             file.close()
 
