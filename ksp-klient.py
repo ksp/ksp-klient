@@ -350,7 +350,7 @@ def handle_run(arguments: Namespace) -> None:
                     enconded_bytes = try_decode_bytes(e.stderr)
                     params = {} if enconded_bytes == None else {"end": ""}
                     error(enconded_bytes or e.stderr, **params)
-                    error("--------- Konec chybového výstupu ---------")
+                    error("--------- Konec chybového výstupu ------------------")
         finally:
             file.close()
 
