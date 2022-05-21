@@ -322,13 +322,13 @@ def handle_run(arguments: Namespace) -> None:
             resp = kspApiService.submit(task, subtask, output)
             print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
         except subprocess.CalledProcessError as e:
-            # oznam chybu
+            # report error
             msg = f"Podúloha {subtask}: Tvoje řešítko spadlo... :("
             if e.returncode:
                 msg += f" Program skončil s návratovým kódem {e.returncode}"
             error(msg)
 
-            # jestlise nám podařilo zachytit nějaký výstup, tak ho vytiskneme
+            # if some output was captured, print it
             if e.stdout or e.stderr:
                 error("Před ukončením Tvůj program vypsal následující výstup:")
                 if e.stdout:
