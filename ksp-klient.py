@@ -340,12 +340,16 @@ def handle_run(arguments: Namespace) -> None:
                 error("Před ukončením Tvůj program vypsal následující výstup:")
                 if e.stdout:
                     error("--------- Standardní výstup Tvého programu ---------")
-                    error(try_decode_bytes(e.stdout) or e.stdout)
+                    enconded_bytes = try_decode_bytes(e.stdout)
+                    params = {} if enconded_bytes == None else {"end": ""}
+                    error(enconded_bytes or e.stdout, **params)
                     error("--------- Konec standardního výstupu ---------------")
                 if e.stderr:
                     error("--------- Chybový výstup Tvého programu ------------")
-                    error(try_decode_bytes(e.stderr) or e.stderr)
-                    error("--------- Konec chybového výstupu ------------------")
+                    enconded_bytes = try_decode_bytes(e.stderr)
+                    params = {} if enconded_bytes == None else {"end": ""}
+                    error(enconded_bytes or e.stderr, **params)
+                    error("--------- Konec chybového výstupu ---------")
         finally:
             file.close()
 
