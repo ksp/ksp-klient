@@ -309,6 +309,13 @@ def handle_generate(arguments: Namespace) -> None:
             arguments.output_file.write(chunk)
 
 
+def try_decode_bytes(data: Union[bytes, bytearray]) -> Optional[str]:
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        return None
+
+
 def handle_run(arguments: Namespace) -> None:
     task = arguments.task
     subtasks = arguments.subtasks
@@ -333,12 +340,12 @@ def handle_run(arguments: Namespace) -> None:
                 error("Před ukončením Tvůj program vypsal následující výstup:")
                 if e.stdout:
                     error("--------- Standardní výstup Tvého programu ---------")
-                    error(e.stdout)
-                    error("--------- Konec standardního výstupu ---------")
+                    error(try_decode_bytes(e.stdout) or e.stdout)
+                    error("--------- Konec standardního výstupu ---------------")
                 if e.stderr:
-                    error("--------- Chybový výstup Tvého programu ---------")
-                    error(e.stderr)
-                    error("--------- Konec chybového výstupu ---------")
+                    error("--------- Chybový výstup Tvého programu ------------")
+                    error(try_decode_bytes(e.stderr) or e.stderr)
+                    error("--------- Konec chybového výstupu ------------------")
         finally:
             file.close()
 
