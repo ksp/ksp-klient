@@ -50,7 +50,8 @@ def error(*args, **kvargs):
     if sys.stderr.isatty():
         eprint("\033[31m", end="")
         color_end = "\033[0m"
-    eprint(*args, color_end, **kvargs)
+    eprint(*args, **kvargs)
+    eprint(color_end, end="")
 
 
 def print_nice_json(json_text):
