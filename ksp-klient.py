@@ -50,7 +50,8 @@ def error(*args, **kvargs):
     if sys.stderr.isatty():
         eprint("\033[31m", end="")
         color_end = "\033[0m"
-    eprint(*args, color_end, **kvargs)
+    eprint(*args, **kvargs)
+    eprint(color_end, end="")
 
 
 def print_nice_json(json_text):
@@ -309,6 +310,13 @@ def handle_generate(arguments: Namespace) -> None:
             arguments.output_file.write(chunk)
 
 
+def try_decode_bytes(data: Union[bytes, bytearray]) -> Optional[str]:
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        return None
+
+
 def handle_run(arguments: Namespace) -> None:
     task = arguments.task
     subtasks = arguments.subtasks
@@ -318,9 +326,31 @@ def handle_run(arguments: Namespace) -> None:
     for subtask in subtasks:
         file = kspApiService.save_test_to_tmp(task, subtask, delete_on_close=arguments.delete_on_close)
         try:
-            output = subprocess.check_output(arguments.sol_args, stdin=file)
+            output = subprocess.check_output(arguments.sol_args, stdin=file, stderr=subprocess.PIPE)
             resp = kspApiService.submit(task, subtask, output)
             print(f"Podúloha {subtask}: {resp['verdict']} ({resp['points']}/{resp['max_points']}b)")
+        except subprocess.CalledProcessError as e:
+            # report error
+            msg = f"Podúloha {subtask}: Tvoje řešítko spadlo... :("
+            if e.returncode:
+                msg += f" Program skončil s návratovým kódem {e.returncode}"
+            error(msg)
+
+            # if some output was captured, print it
+            if e.stdout or e.stderr:
+                error("Před ukončením Tvůj program vypsal následující výstup:")
+                if e.stdout:
+                    error("--------- Standardní výstup Tvého programu ---------")
+                    enconded_bytes = try_decode_bytes(e.stdout)
+                    params = {} if enconded_bytes == None else {"end": ""}
+                    error(enconded_bytes or e.stdout, **params)
+                    error("--------- Konec standardního výstupu ---------------")
+                if e.stderr:
+                    error("--------- Chybový výstup Tvého programu ------------")
+                    enconded_bytes = try_decode_bytes(e.stderr)
+                    params = {} if enconded_bytes == None else {"end": ""}
+                    error(enconded_bytes or e.stderr, **params)
+                    error("--------- Konec chybového výstupu ------------------")
         finally:
             file.close()
 
