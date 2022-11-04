@@ -36,6 +36,9 @@ a nahrazuje webové rozhraní Odevzdávátka.
   pokud za list přidáte přepínač -c, tak se vám zobrazí všechny
   úlohy, které lze odevzdávat do Cvičiště.
     * použití: `./ksp-klient.py list` nebo `./ksp-klient.py list -c`
+* `series` - vypíše seznam sérií v aktuálním ročníku. Pozor, na rozhraní
+  školních roků mohou být aktuální dva ročníky současně.
+    * použití: `./ksp-klient.py series`
 * `status` - vypíše stav dané úlohy - název úlohy, kolik jsi dostal bodů,
   poté následují informace o jednotlivých podúlohách.
     * použití: `./ksp-klient.py status <úloha> `

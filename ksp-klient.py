@@ -7,8 +7,7 @@ import os
 import subprocess
 import json
 import gettext
-import datetime
-import enum
+from datetime import datetime
 import tempfile
 import re
 from typing import Any, AnyStr, Optional, Union, Iterator, IO
@@ -164,6 +163,9 @@ class KSPApiService:
             param['set'] = 'cviciste'
         return self.call_api_json(('tasks/list', requests.get), extra_params=param)
 
+    def get_catalog(self) -> Any:
+        return self.call_api_json(('tasks/catalog', requests.get))
+
     def get_status(self, task: str) -> Any:
         return self.call_api_json(('tasks/status', requests.get),
             extra_params={"task": task})
@@ -244,34 +246,26 @@ def czech_time(value: Union[float, int], first_form: str, second_form: str, thir
         return f'{value} {third_form}'
 
 
-def format_time(subtask: dict) -> str:
-    if subtask['input_generated']:
-        if subtask['input_valid_until'].startswith('9999'):
-            return 'stále'
+def format_countdown(datetime_str: str) -> str:
+    timedelta = datetime.fromisoformat(datetime_str) - datetime.now().astimezone()
 
-        timedelta = datetime.datetime.fromisoformat(subtask['input_valid_until']) - datetime.datetime.now().astimezone()
+    days, hours = divmod(timedelta.total_seconds(), 60*60*24)
+    hours, minutes = divmod(hours, 60*60)
+    minutes, seconds = divmod(minutes, 60)
 
-        days, hours = divmod(timedelta.total_seconds(), 60*60*24)
-        hours, minutes = divmod(hours, 60*60)
-        minutes, seconds = divmod(minutes, 60)
+    day_str = czech_time(days, 'den', 'dny', 'dnů')
+    hour_str = czech_time(hours, 'hodina', 'hodiny', 'hodin')
+    minute_str = czech_time(minutes, 'minuta', 'minuty', 'minut')
+    second_str = czech_time(seconds, 'sekunda', 'sekundy', 'sekund')
+    ret = []
+    for x in [day_str, hour_str, minute_str, second_str]:
+        if x != '':
+            ret.append(x)
 
-        #print(days, hours, minutes, seconds)
-
-        day_str = czech_time(days, 'den', 'dny', 'dnů')
-        hour_str = czech_time(hours, 'hodina', 'hodiny', 'hodin')
-        minute_str = czech_time(minutes, 'minuta', 'minuty', 'minut')
-        second_str = czech_time(seconds, 'sekunda', 'sekundy', 'sekund')
-        ret = []
-        for x in [day_str, hour_str, minute_str, second_str]:
-            if x != '':
-                ret.append(x)
-
-        if len(ret) < 3:
-            return ' a '.join(ret)
-        else:
-            return ', '.join(ret[:-1]) + f' a {ret[-1]}'
+    if len(ret) < 3:
+        return ' a '.join(ret)
     else:
-        return 'Nevygenerováno'
+        return ', '.join(ret[:-1]) + f' a {ret[-1]}'
 
 
 def print_table_status(json_text: dict) -> None:
@@ -282,11 +276,48 @@ def print_table_status(json_text: dict) -> None:
     for subtask in json_text['subtasks']:
         points = f'{subtask["points"]}/{subtask["max_points"]}'
         verdict = subtask.get('verdict', "")
-        print(f'{subtask["id"]:<5}| {format_time(subtask):<32}| {points:<8}| {verdict}')
+
+        time_formated = 'Nevygenerováno'
+        input_valid = subtask.get('input_valid_until', None)
+        if input_valid:
+            if input_valid.startswith('9999'):
+                time_formated = 'Stálý vstup'
+            else:
+                time_formated = format_countdown(input_valid)
+
+        print(f'{subtask["id"]:<5}| {time_formated:<32}| {points:<8}| {verdict}')
 
 
 def handle_list(arguments: Namespace) -> None:
     print_nice_json(kspApiService.get_list(arguments.cviciste))
+
+
+def print_table_series(json_text: dict) -> None:
+    time_now = datetime.now().astimezone()
+    def format_deadline_countdown(deadline: str) -> str:
+        nonlocal time_now
+        if deadline:
+            deadline_datetime = datetime.fromisoformat(deadline)
+            if deadline_datetime >= time_now:
+                return 'za ' + format_countdown(deadline)
+            else:
+                return 'vypršel'
+        else:
+            return 'není'
+
+    print(f'{"Série":<7}| {"Vydáno":<12}| {"První termín":<44}| {"Druhý termín":<44}')
+    print('-'*113)
+    format_str = "%Y-%m-%d"
+    for subtask in json_text:
+        deadline = subtask.get('deadline', None)
+        deadline2 = subtask.get('deadline2', None)
+
+        published = datetime.fromisoformat(subtask['tasks_published']).strftime(format_str)
+        print(f'{subtask["id"]:<7}| {published:<12}| {format_deadline_countdown(deadline):<44}| {format_deadline_countdown(deadline2):<40}')
+
+
+def handle_list_series(arguments: Namespace) -> None:
+    print_table_series(kspApiService.get_catalog())
 
 
 def handle_status(arguments: Namespace) -> None:
@@ -391,6 +422,9 @@ parser_list = subparsers.add_parser('list', help='Zobrazí všechny úlohy, kter
                 epilog=example_usage('./ksp-klient.py list'))
 parser_list.add_argument('-c', '--cviciste', help='Zobrazit úlohy z cvičiště', action='store_true')
 
+parser_list = subparsers.add_parser('series', help='Zobrazí seznam sérií v aktuálním ročníku. Pozor, na rozhraní školních roků mohou být aktuální dva ročníky současně.',
+                epilog=example_usage('./ksp-klient.py series'))
+
 parser_status = subparsers.add_parser('status', help='Zobrazí stav dané úlohy',
                 epilog=example_usage('./ksp-klient.py status 32-Z4-1'))
 parser_status.add_argument("task", help="kód úlohy")
@@ -424,8 +458,8 @@ kspApiService = KSPApiService(api_url=arguments.api_url,
                               verbose=arguments.verbose,
                               ca_bundle_path=arguments.ca_bundle_path)
 
-operations: dict = {'list': handle_list, 'status': handle_status, 'submit': handle_submit,
-                    'generate': handle_generate, 'run': handle_run}
+operations: dict = {'list': handle_list, 'series': handle_list_series, 'status': handle_status,
+                    'submit': handle_submit, 'generate': handle_generate, 'run': handle_run}
 
 if arguments.operation_name is None:
     parser.print_help()
