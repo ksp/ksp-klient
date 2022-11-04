@@ -164,8 +164,8 @@ class KSPApiService:
             param['set'] = 'cviciste'
         return self.call_api_json(('tasks/list', requests.get), extra_params=param)
 
-    def get_list_series(self) -> Any:
-        return self.call_api_json(('tasks/list-series', requests.get))
+    def get_catalog(self) -> Any:
+        return self.call_api_json(('tasks/catalog', requests.get))
 
     def get_status(self, task: str) -> Any:
         return self.call_api_json(('tasks/status', requests.get),
@@ -320,7 +320,7 @@ def print_table_series(json_text: dict) -> None:
 
 
 def handle_list_series(arguments: Namespace) -> None:
-    print_table_series(kspApiService.get_list_series())
+    print_table_series(kspApiService.get_catalog())
 
 
 def handle_status(arguments: Namespace) -> None:
