@@ -253,8 +253,6 @@ def format_countdown(datetime_str: str) -> str:
     hours, minutes = divmod(hours, 60*60)
     minutes, seconds = divmod(minutes, 60)
 
-    #print(days, hours, minutes, seconds)
-
     day_str = czech_time(days, 'den', 'dny', 'dnů')
     hour_str = czech_time(hours, 'hodina', 'hodiny', 'hodin')
     minute_str = czech_time(minutes, 'minuta', 'minuty', 'minut')
@@ -301,21 +299,21 @@ def print_table_series(json_text: dict) -> None:
         if deadline:
             deadline_datetime = datetime.fromisoformat(deadline)
             if deadline_datetime >= time_now:
-                return format_countdown(deadline)
+                return 'za ' + format_countdown(deadline)
             else:
-                return 'Termín vypršel'
+                return 'vypršel'
         else:
-            return '-' * 38
+            return 'není'
 
-    print(f'{"Série":<7}| {"Vydáno":<20}| {"První deadline za":<40}| {"Druhý deadline za":<40}')
+    print(f'{"Série":<7}| {"Vydáno":<12}| {"První termín":<44}| {"Druhý termín":<44}')
     print('-'*113)
-    format_str = "%d. %m. %y %H:%M"
+    format_str = "%Y-%m-%d"
     for subtask in json_text:
         deadline = subtask.get('deadline', None)
         deadline2 = subtask.get('deadline2', None)
 
         published = datetime.fromisoformat(subtask['tasks_published']).strftime(format_str)
-        print(f'{subtask["id"]:<7}| {published:<20}| {format_deadline_countdown(deadline):<40}| {format_deadline_countdown(deadline2):<40}')
+        print(f'{subtask["id"]:<7}| {published:<12}| {format_deadline_countdown(deadline):<44}| {format_deadline_countdown(deadline2):<40}')
 
 
 def handle_list_series(arguments: Namespace) -> None:
