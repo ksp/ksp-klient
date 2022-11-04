@@ -8,7 +8,6 @@ import subprocess
 import json
 import gettext
 from datetime import datetime
-import enum
 import tempfile
 import re
 from typing import Any, AnyStr, Optional, Union, Iterator, IO
