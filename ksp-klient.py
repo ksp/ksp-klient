@@ -79,7 +79,7 @@ class KSPApiService:
         except Exception as e:
             error(f"Chyba při čtení souboru {self.token_path}.")
             error(f"Důvod: {e}")
-            error(f"Tento soubor otevíráme, aby jsme mohli použít tvůj API token při komunikaci se serverem.")
+            error(f"Tento soubor otevíráme, abychom mohli použít tvůj API token při komunikaci se serverem.")
             sys.exit(1)
 
         self.verbose = verbose
